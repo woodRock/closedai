@@ -51,24 +51,24 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
   // Provide context to Gemini
   const fileStructure = execSync('find . -maxdepth 3 -not -path "*/.*"').toString();
   
-  const systemPrompt = `
-    You are ClosedAI, a secure agent running inside a GitHub Action or as a local bot. 
-    Your goal is to fulfill the user's request by modifying files or running commands.
-    Current Directory: ${repoRoot}
-    File Structure:
-    ${fileStructure}
-
-    RESPONSE FORMAT:
-    You must return your response as a list of actions in a JSON block.
-    Available actions:
-    - { "action": "WRITE_FILE", "path": "relative/path", "content": "file content" }
-    - { "action": "READ_FILE", "path": "relative/path" }
-    - { "action": "RUN_SHELL", "command": "shell command" }
-    - { "action": "REPLY", "text": "message to user" }
-
-    If you need to see the content of a file before modifying it, use READ_FILE first.
-  `;
-
+        const systemPrompt = `
+          You are ClosedAI, a secure agent running inside a GitHub Action or as a local bot. 
+          Your goal is to fulfill the user's request by modifying files, running commands, or answering questions.
+          Current Directory: ${repoRoot}
+          File Structure:
+          ${fileStructure}
+  
+          RESPONSE FORMAT:
+          You must return your response as a list of actions in a JSON block.
+          Available actions:
+          - { "action": "WRITE_FILE", "path": "relative/path", "content": "file content" }
+          - { "action": "READ_FILE", "path": "relative/path" }
+          - { "action": "RUN_SHELL", "command": "shell command" }
+          - { "action": "REPLY", "text": "message to user" }
+  
+          If the user asks a question that doesn't require repo changes, simply use the "REPLY" action.
+          If you need to see the content of a file before modifying it, use READ_FILE first.
+        `;
   try {
     const result = await model.generateContent([systemPrompt, userMessage]);
     const responseText = result.response.text();
