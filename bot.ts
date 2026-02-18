@@ -21,7 +21,7 @@ const db = getFirestore(app);
 
 // 2. Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
 // 3. Initialize Telegram (for sending replies)
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
