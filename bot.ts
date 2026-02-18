@@ -27,6 +27,16 @@ const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 // 3. Initialize Telegram with trimmed token
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN?.trim() || '');
 
+const MAX_MESSAGE_LENGTH = 4000;
+async function safeSendMessage(chatId: number, text: string) {
+  if (text.length <= MAX_MESSAGE_LENGTH) {
+    return bot.telegram.sendMessage(chatId, text);
+  }
+  
+  const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated due to length)";
+  return bot.telegram.sendMessage(chatId, truncated);
+}
+
 async function processOneMessage(userMessage: string, chatId: number, repoRoot: string) {
   // Whitelist check
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
