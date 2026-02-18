@@ -1,0 +1,16 @@
+# Dependencies
+node_modules/
+dist/
+*.log
+
+# Firebase & Secrets
+service-account.json
+firebase-key.json
+*.local.json
+.env
+.env.local
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
