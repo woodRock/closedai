@@ -34,11 +34,13 @@ async function main() {
   const geminiKey = (await question("🔑 Enter your Gemini API Key: ")).trim();
   try {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    // Use gemini-1.5-flash for the validation ping as it is the most widely available
+    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     await model.generateContent("ping");
     console.log("✅ Gemini API Key validated.\n");
   } catch (e: any) {
-    console.error("❌ Invalid Gemini API Key: " + e.message);
+    console.error("❌ Invalid Gemini API Key or Model access: " + e.message);
+    console.log("Hint: Make sure your API key has access to Gemini 3 Flash in AI Studio.");
     process.exit(1);
   }
 

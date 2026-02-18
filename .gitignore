@@ -9,6 +9,7 @@ firebase-key.json
 *.local.json
 .env
 .env.local
+closedai-e7fff-firebase-adminsdk-fbsvc-4106ce4aca.json
 
 # IDEs
 .vscode/

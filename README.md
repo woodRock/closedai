@@ -75,6 +75,20 @@ The bot polls for new messages every 5 minutes and performs the tasks automatica
 
 ---
 
+## ⚡ Instant Mode (Raspberry Pi / Local)
+
+If you want the bot to respond **instantly** (within seconds) instead of waiting for the GitHub Action cron, you can run it on your own hardware:
+
+1.  **Clone the repo** to your Raspberry Pi or local machine.
+2.  **Run setup**: `npm run setup` (this creates your `.env`).
+3.  **Start Polling**:
+    ```bash
+    npm run start:poll
+    ```
+The bot will now listen for messages in real-time. You can leave it running in a `screen` or `tmux` session on your Pi.
+
+---
+
 ## 🛡 Security Note
 
 ClosedAI has full shell access to your repository environment. Always use the `ALLOWED_TELEGRAM_USER_IDS` secret to ensure only authorized users can issue commands.
