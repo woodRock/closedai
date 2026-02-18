@@ -83,51 +83,50 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
           fs.mkdirSync(path.dirname(fullPath), { recursive: true });
           fs.writeFileSync(fullPath, action.content);
           console.log(`Wrote file: ${action.path}`);
-        } else if (action.action === 'READ_FILE') {
-          const fullPath = path.join(repoRoot, action.path);
-          if (fs.existsSync(fullPath)) {
-            const content = fs.readFileSync(fullPath, 'utf-8');
-            await bot.telegram.sendMessage(chatId, `Content of ${action.path}:\n\`\`\`\n${content}\n\`\`\``);
-          } else {
-            await bot.telegram.sendMessage(chatId, `File ${action.path} not found.`);
-          }
-        } else if (action.action === 'RUN_SHELL') {
-          console.log(`Running: ${action.command}`);
-          try {
-            const output = execSync(action.command).toString();
-            if (output) await bot.telegram.sendMessage(chatId, `Output:\n${output}`);
-          } catch (e: any) {
-            await bot.telegram.sendMessage(chatId, `Error: ${e.message}`);
-          }
-        } else if (action.action === 'REPLY') {
-          await bot.telegram.sendMessage(chatId, action.text);
-        }
-      }
-    } else {
-      await bot.telegram.sendMessage(chatId, responseText);
-    }
-
-    // Commit changes if any
-    try {
-      const status = execSync('git status --porcelain').toString();
-      if (status.length > 0) {
-        console.log("Changes detected. Committing...");
-        execSync('git add .');
-        execSync('git commit -m "ClosedAI: Automatic update from bot"');
-        execSync('git push');
-      } else {
-        console.log("No changes detected in the repository.");
-      }
-    } catch (e) {
-      console.error("Git operation failed:", e);
-    }
-
-  } catch (error: any) {
-    console.error('Error during Gemini processing:', error);
-    if (error.cause) console.error('Error cause:', error.cause);
-    await bot.telegram.sendMessage(chatId, "Error: " + error.message + (error.cause ? ` (${error.cause})` : ""));
-  }
-}
+                    } else if (action.action === 'READ_FILE') {
+                      const fullPath = path.join(repoRoot, action.path);
+                      if (fs.existsSync(fullPath)) {
+                        const content = fs.readFileSync(fullPath, 'utf-8');
+                        await safeSendMessage(chatId, `Content of ${action.path}:\n\`\`\`\n${content}\n\`\`\``);
+                      } else {
+                        await bot.telegram.sendMessage(chatId, `File ${action.path} not found.`);
+                      }
+                    } else if (action.action === 'RUN_SHELL') {
+                      console.log(`Running: ${action.command}`);
+                      try {
+                        const output = execSync(action.command).toString();
+                        if (output) await safeSendMessage(chatId, `Output:\n\`\`\`\n${output}\n\`\`\``);
+                      } catch (e: any) {
+                        await bot.telegram.sendMessage(chatId, `Error: ${e.message}`);
+                      }
+                    } else if (action.action === 'REPLY') {
+                      await bot.telegram.sendMessage(chatId, action.text);
+                    }
+                  }
+                } else {
+                  await safeSendMessage(chatId, responseText);
+                }
+        
+                // Commit changes if any
+                try {
+                  const status = execSync('git status --porcelain').toString();
+                  if (status.length > 0) {
+                    console.log("Changes detected. Committing...");
+                    execSync('git add .');
+                    execSync('git commit -m "ClosedAI: Automatic update from bot"');
+                    execSync('git push');
+                  } else {
+                    console.log("No changes detected in the repository.");
+                  }
+                } catch (e) {
+                  console.error("Git operation failed:", e);
+                }
+        
+              } catch (error: any) {
+                console.error('Error during Gemini processing:', error);
+                if (error.cause) console.error('Error cause:', error.cause);
+                await safeSendMessage(chatId, "Error: " + error.message + (error.cause ? ` (${error.cause})` : ""));
+              }}
 
 async function run() {
   const isPolling = process.argv.includes('--poll');
