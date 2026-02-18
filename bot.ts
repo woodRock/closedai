@@ -7,8 +7,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 import 'dotenv/config';
 
-// 1. Initialize Firebase
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT || '{}');
+// 1. Initialize Firebase with trimmed secrets
+const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT?.trim() || '{}');
 if (!serviceAccount.project_id) {
   console.error('FIREBASE_SERVICE_ACCOUNT is missing or invalid.');
   process.exit(1);
@@ -19,12 +19,12 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-// 2. Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
+// 2. Initialize Gemini with trimmed API key
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim() || '');
 const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
 
-// 3. Initialize Telegram (for sending replies)
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN || '');
+// 3. Initialize Telegram with trimmed token
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN?.trim() || '');
 
 async function run() {
   const repoRoot = process.cwd();
@@ -132,7 +132,8 @@ async function run() {
 
       } catch (error: any) {
         console.error('Error during Gemini processing:', error);
-        await bot.telegram.sendMessage(chatId, "Error: " + error.message);
+        if (error.cause) console.error('Error cause:', error.cause);
+        await bot.telegram.sendMessage(chatId, "Error: " + error.message + (error.cause ? ` (${error.cause})` : ""));
       }
 
       lastUpdateId = update.update_id;

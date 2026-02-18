@@ -1,45 +1,83 @@
-# ClosedAI (clowdbot alternative)
+# 🤖 ClosedAI
 
-A secure, free, and repository-capable SMS/Telegram wrapper for Gemini CLI. 
-Runs as a GitHub Action, so you don't need a dedicated server.
+[![GitHub License](https://img.shields.io/github/license/woodRock/closedai)](https://github.com/woodRock/closedai/blob/main/LICENSE)
+[![GitHub Star](https://img.shields.io/github/stars/woodRock/closedai)](https://github.com/woodRock/closedai/stargazers)
+[![Status](https://img.shields.io/badge/Status-Stable-brightgreen)](https://github.com/woodRock/closedai)
 
-## Features
-- **Free Forever:** Powered by GitHub Actions (cron jobs) and Telegram's free Bot API.
-- **Repository-Capable:** Tell the bot to "add a README" or "fix this bug" and it will commit the changes directly to your repo.
-- **Stateless/Secure:** Uses Firebase Firestore to keep track of messages without needing a persistent server.
+**ClosedAI** is a secure, serverless, and repository-capable automation agent. It allows you to build, refactor, and manage your GitHub repository directly from your phone via Telegram.
 
-## Setup Instructions
-
-### 1. Telegram Bot (The Interface)
-1. Message [@BotFather](https://t.me/botfather) on Telegram.
-2. Type `/newbot`, choose a name (`closedai_bot`).
-3. Copy the **API Token**.
-
-### 2. Firebase (The Memory)
-1. Create a project on the [Firebase Console](https://console.firebase.google.com/).
-2. Enable **Firestore Database**.
-3. Go to **Project Settings > Service accounts > Generate new private key**.
-4. Save the JSON file.
-
-### 3. GitHub Secrets
-In your repository settings, go to **Secrets and variables > Actions** and add:
-- `TELEGRAM_BOT_TOKEN`: The token from BotFather.
-- `GEMINI_API_KEY`: Your [Google AI Studio API Key](https://aistudio.google.com/).
-- `FIREBASE_SERVICE_ACCOUNT`: The entire content of the Firebase service account JSON.
-
-### 4. Deploy
-1. Push this code to your GitHub repository.
-2. The GitHub Action will run every 5 minutes automatically.
-3. You can also trigger it manually under the "Actions" tab.
-
-## Usage
-Simply message your bot on Telegram:
-- "Create a new file called app.py with a flask server."
-- "Refactor the existing code to use async/await."
-- "What files are in the current directory?"
-
-## Why Telegram instead of WhatsApp?
-WhatsApp Business API is often paid or requires complex verification. Telegram is 100% free for bots and can be set up in seconds.
+No more expensive servers or complex hosting—ClosedAI runs entirely on **GitHub Actions** and uses **Firebase** for persistence.
 
 ---
-Built with [Gemini CLI](https://github.com/google/gemini-cli).
+
+## 🌟 Key Features
+
+- **Free Forever**: Powered by GitHub Actions' free tier and Telegram's free Bot API.
+- **Full Repository Access**: Gemini can read files, write code, and run shell commands (like `npm install` or `pytest`).
+- **Secure**: Uses a whitelist system so only you (or your team) can control the bot.
+- **Stateless/Sync**: Synchronizes state via Firebase Firestore, ensuring no commands are missed or duplicated.
+- **Automated Deployment**: Any changes the bot makes are automatically committed and pushed back to your branch.
+
+---
+
+## 🛠 Prerequisites
+
+1.  **A GitHub Repository**: Where the bot will run.
+2.  **Telegram Account**: To interact with the bot.
+3.  **Google AI Studio Key**: To access Gemini 1.5 Pro. [Get it here](https://aistudio.google.com/).
+4.  **Firebase Project**: For message history and state. [Get it here](https://console.firebase.google.com/).
+
+---
+
+## 🚀 Installation & Setup
+
+### 1. The Telegram Bot
+1.  Message [@BotFather](https://t.me/botfather) on Telegram.
+2.  Run `/newbot` and follow the prompts to get your **Bot Token**.
+3.  (Optional) Use [@userinfobot](https://t.me/userinfobot) to get your **User ID** for the security whitelist.
+
+### 2. The Firebase Database
+1.  Create a new project in the [Firebase Console](https://console.firebase.google.com/).
+2.  Navigate to **Firestore Database** and click **Create Database** (Start in production mode).
+3.  Go to **Project Settings** > **Service accounts**.
+4.  Click **Generate new private key** and download the JSON file.
+
+### 3. GitHub Configuration
+In your repository, go to **Settings > Secrets and variables > Actions** and add the following **Repository Secrets**:
+
+| Secret Name | Description |
+| :--- | :--- |
+| `TELEGRAM_BOT_TOKEN` | The token from BotFather. |
+| `GEMINI_API_KEY` | Your Google AI Studio API Key. |
+| `FIREBASE_SERVICE_ACCOUNT` | The **entire content** of the Firebase Service Account JSON. |
+| `ALLOWED_TELEGRAM_USER_IDS` | (Recommended) A comma-separated list of Telegram User IDs allowed to use the bot. |
+
+### 4. Deploy
+Push this code to your repository:
+```bash
+git add .
+git commit -m "Initial ClosedAI setup"
+git push
+```
+
+---
+
+## 💬 Usage
+
+Once deployed, simply message your bot on Telegram:
+
+- **Build features**: *"Add a Python Flask server with a /health endpoint."*
+- **Refactor code**: *"Read bot.ts and suggest improvements for error handling."*
+- **Run commands**: *"Run 'npm test' and tell me the results."*
+- **Manage files**: *"Delete the old temp folder and update the .gitignore."*
+
+The bot polls for new messages every 5 minutes and performs the tasks automatically!
+
+---
+
+## 🛡 Security Note
+
+ClosedAI has full shell access to your repository environment. Always use the `ALLOWED_TELEGRAM_USER_IDS` secret to ensure only authorized users can issue commands.
+
+---
+Built with ❤️ using [Gemini CLI](https://github.com/google/gemini-cli).
