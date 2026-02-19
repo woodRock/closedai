@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  closedai:
+    build: .
+    container_name: closedai-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      # Mount the current directory so the bot can modify the source code on the host
+      - .:/app
+      # Ensure node_modules inside the container is used and not overridden by the host's
+      - /app/node_modules
+    environment:
+      - NODE_ENV=production

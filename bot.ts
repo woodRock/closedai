@@ -1,6 +1,6 @@
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { Telegraf } from 'telegraf';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
@@ -20,16 +20,56 @@ const app = initializeApp({
 });
 const db = getFirestore(app);
 
-// 2. Initialize Gemini with trimmed API key
+// 2. Define Tools for Gemini
+const tools = [
+  {
+    functionDeclarations: [
+      {
+        name: "write_file",
+        description: "Create or overwrite a file with specific content.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." },
+            content: { type: SchemaType.STRING, description: "Full content of the file." }
+          },
+          required: ["path", "content"]
+        }
+      },
+      {
+        name: "read_file",
+        description: "Read the content of a file.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "run_shell",
+        description: "Execute a shell command and return the output.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            command: { type: SchemaType.STRING, description: "The shell command to run." }
+          },
+          required: ["command"]
+        }
+      }
+    ]
+  }
+];
+
+// 3. Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim() || '');
 const model = genAI.getGenerativeModel({ 
   model: "gemini-3-flash-preview",
-  generationConfig: {
-    responseMimeType: "application/json",
-  }
+  tools: tools,
 });
 
-// 3. Initialize Telegram with trimmed token
+// 4. Initialize Telegram
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN?.trim() || '');
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -37,129 +77,114 @@ async function safeSendMessage(chatId: number, text: string) {
   if (text.length <= MAX_MESSAGE_LENGTH) {
     return bot.telegram.sendMessage(chatId, text);
   }
-  
-  const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated due to length)";
+  const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated)";
   return bot.telegram.sendMessage(chatId, truncated);
 }
 
 async function processOneMessage(userMessage: string, chatId: number, repoRoot: string) {
-  // Whitelist check
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
-    console.log(`Unauthorized access attempt from chat ID: ${chatId}`);
-    await bot.telegram.sendMessage(chatId, "Sorry, you are not authorized to use this bot.");
+    await bot.telegram.sendMessage(chatId, "Sorry, you are not authorized.");
     return;
   }
 
   console.log(`Processing message from ${chatId}: ${userMessage}`);
 
-  // Provide context to Gemini
-  const fileStructure = execSync('find . -maxdepth 3 -not -path "*/.*"').toString();
+  const fileStructure = execSync('find . -maxdepth 2 -not -path "*/.*"').toString();
+  const packageJson = fs.existsSync('package.json') ? fs.readFileSync('package.json', 'utf-8') : 'Not found';
   
   const systemPrompt = `
-    You are ClosedAI, a secure agent running inside a GitHub Action or as a local bot. 
-    Your goal is to fulfill the user's request by modifying files, running commands, or answering questions.
+    You are ClosedAI, a secure agent.
     Current Directory: ${repoRoot}
-    File Structure:
+    
+    FILE STRUCTURE:
     ${fileStructure}
-
-    RESPONSE FORMAT:
-    You must return your response as a JSON array of actions.
-    Available actions:
-    - { "action": "WRITE_FILE", "path": "relative/path", "content": "file content" }
-    - { "action": "READ_FILE", "path": "relative/path" }
-    - { "action": "RUN_SHELL", "command": "shell command" }
-    - { "action": "REPLY", "text": "message to user" }
-
-    If the user asks a question that doesn't require repo changes, simply use the "REPLY" action.
-    If you need to see the content of a file before modifying it, use READ_FILE first.
-    Return ONLY the JSON array. Do not include any explanation or markdown backticks.
+    
+    KEY FILE (package.json):
+    ${packageJson}
+    
+    Instructions:
+    - Use the provided tools to fulfill the user's request.
+    - If you can fulfill the request in one turn (e.g., you already know what to write), do it.
+    - If you need more info, use read_file or run_shell.
+    - When finished, provide a final summary of your actions to the user.
   `;
 
+  const chat = model.startChat({
+    history: [
+      { role: "user", parts: [{ text: systemPrompt }] },
+      { role: "model", parts: [{ text: "Understood. I am ready to help with the repository." }] }
+    ],
+  });
+
   try {
-    const result = await model.generateContent([systemPrompt, userMessage]);
-    const responseText = result.response.text();
-    console.log(`--- Gemini Response ---\n${responseText}\n-----------------------`);
-    
-    let actions: any[];
-    try {
-      actions = JSON.parse(responseText);
-    } catch (e) {
-      // Fallback for non-JSON responses or markdown-wrapped JSON
-      const jsonMatch = responseText.match(/```json\n([\s\S]*?)\n```/) || responseText.match(/\[[\s\S]*\]/);
-      if (jsonMatch) {
-        const jsonStr = jsonMatch[1] || jsonMatch[0];
+    let result = await chat.sendMessage(userMessage);
+    let turn = 0;
+
+    while (turn < 10) {
+      const response = result.response;
+      const calls = response.functionCalls();
+
+      if (!calls || calls.length === 0) {
+        // No more tool calls, send the final text response
+        const text = response.text();
+        if (text) await safeSendMessage(chatId, text);
+        break;
+      }
+
+      console.log(`--- Turn ${turn + 1}: ${calls.length} function call(s) ---`);
+      const functionResponses = [];
+
+      for (const call of calls) {
+        const { name, args } = call;
+        let content;
+
         try {
-          actions = JSON.parse(jsonStr);
-        } catch (innerError: any) {
-          // If it still fails, it might be due to trailing characters in the match
-          const lastBracket = jsonStr.lastIndexOf(']');
-          if (lastBracket !== -1) {
-            actions = JSON.parse(jsonStr.substring(0, lastBracket + 1));
-          } else {
-            throw innerError;
+          if (name === "write_file") {
+            const fullPath = path.join(repoRoot, (args as any).path);
+            fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+            fs.writeFileSync(fullPath, (args as any).content);
+            content = { result: `Success: Wrote to ${(args as any).path}` };
+            console.log(`Wrote file: ${(args as any).path}`);
+          } else if (name === "read_file") {
+            const fullPath = path.join(repoRoot, (args as any).path);
+            const data = fs.readFileSync(fullPath, "utf-8");
+            content = { result: data };
+            console.log(`Read file: ${(args as any).path}`);
+          } else if (name === "run_shell") {
+            const output = execSync((args as any).command).toString();
+            content = { result: output };
+            console.log(`Ran command: ${(args as any).command}`);
           }
+        } catch (e: any) {
+          content = { error: e.message };
+          console.error(`Tool error (${name}):`, e.message);
         }
-      } else {
-        // Not a JSON response, maybe it's just a text reply
-        console.log("No JSON structure found, treating as plain text reply.");
-        await safeSendMessage(chatId, responseText);
-        return;
+
+        functionResponses.push({
+          functionResponse: { name, response: content }
+        });
       }
-    }
-    
-    console.log(`Parsed ${Array.isArray(actions) ? actions.length : 0} actions.`);
-    
-    if (Array.isArray(actions)) {
-      for (const action of actions) {
-        if (action.action === 'WRITE_FILE') {
-          const fullPath = path.join(repoRoot, action.path);
-          fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-          fs.writeFileSync(fullPath, action.content);
-          console.log(`Wrote file: ${action.path}`);
-        } else if (action.action === 'READ_FILE') {
-          const fullPath = path.join(repoRoot, action.path);
-          if (fs.existsSync(fullPath)) {
-            const content = fs.readFileSync(fullPath, 'utf-8');
-            await safeSendMessage(chatId, `Content of ${action.path}:\n\`\`\`\n${content}\n\`\`\``);
-          } else {
-            await bot.telegram.sendMessage(chatId, `File ${action.path} not found.`);
-          }
-        } else if (action.action === 'RUN_SHELL') {
-          console.log(`Running: ${action.command}`);
-          try {
-            const output = execSync(action.command).toString();
-            if (output) await safeSendMessage(chatId, `Output:\n\`\`\`\n${output}\n\`\`\``);
-          } catch (e: any) {
-            await bot.telegram.sendMessage(chatId, `Error: ${e.message}`);
-          }
-        } else if (action.action === 'REPLY') {
-          await bot.telegram.sendMessage(chatId, action.text);
-        }
-      }
-    } else {
-      await safeSendMessage(chatId, responseText);
+
+      // Send the results back to the model
+      result = await chat.sendMessage(functionResponses);
+      turn++;
     }
 
-    // Commit changes if any
+    // Git commit/push logic
     try {
       const status = execSync('git status --porcelain').toString();
       if (status.length > 0) {
-        console.log("Changes detected. Committing...");
-        execSync('git add .');
-        execSync('git commit -m "ClosedAI: Automatic update from bot"');
-        execSync('git push');
-      } else {
-        console.log("No changes detected in the repository.");
+        execSync('git add . && git commit -m "ClosedAI: Automatic update" && git push');
+        console.log("Changes committed and pushed.");
       }
     } catch (e) {
-      console.error("Git operation failed:", e);
+      console.error("Git failed:", e);
     }
 
   } catch (error: any) {
-    console.error('Error during Gemini processing:', error);
-    if (error.cause) console.error('Error cause:', error.cause);
-    await safeSendMessage(chatId, "Error: " + error.message + (error.cause ? ` (${error.cause})` : ""));
+    console.error('Gemini Error:', error);
+    await safeSendMessage(chatId, "Error: " + error.message);
   }
 }
 
@@ -168,33 +193,23 @@ async function run() {
   const repoRoot = process.cwd();
 
   if (isPolling) {
-    console.log("🚀 Starting in Long Polling mode (Instant replies)...");
+    console.log("🚀 Starting in Long Polling mode...");
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
         await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot);
       }
     });
     bot.launch();
-    
-    // Enable graceful stop
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
     return;
   }
 
-  // Fallback for GitHub Actions (Cron)
   const lastProcessedRef = db.collection('config').doc('last_processed');
   const doc = await lastProcessedRef.get();
   let lastUpdateId = doc.exists ? doc.data()?.update_id || 0 : 0;
 
-  // Poll Telegram for updates
   const updates = await bot.telegram.getUpdates(100, 100, lastUpdateId + 1, ['message']);
-  
-  if (updates.length === 0) {
-    console.log('No new messages.');
-    return;
-  }
-
   for (const update of updates) {
     if ('message' in update && update.message && 'text' in (update.message as any)) {
       const message = update.message as any;
@@ -202,8 +217,6 @@ async function run() {
       lastUpdateId = update.update_id;
     }
   }
-
-  // Update last processed ID in Firebase
   await lastProcessedRef.set({ update_id: lastUpdateId });
 }
 

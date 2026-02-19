@@ -1,0 +1,7 @@
+node_modules
+npm-debug.log
+.env
+*.json.bak
+# Keep .git if the agent needs it inside the container, 
+# though usually, you'd volume mount the source code for development.
+# .git 
