@@ -2,7 +2,7 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import { db, FieldValue } from '../services/firebase.js';
-import { model } from '../services/gemini.js';
+import { model, genAI } from '../services/gemini.js';
 import { bot } from './instance.js';
 import { logInstruction } from '../utils/logger.js';
 import { handleSystemCommands } from './commands.js';
@@ -102,10 +102,25 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
     try {
-      const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
-      if (status.length > 0) {
-        execSync('git add . && git commit -m "ClosedAI: Automatic update" && git push', { cwd: repoRoot });
-        logInstruction(chatId, 'SHELL', 'Git push completed.');
+      execSync('git add .', { cwd: repoRoot });
+      const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
+      
+      if (diff.length > 0) {
+        let commitMsg = "ClosedAI: Automatic update";
+        try {
+          const simpleModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+          const prompt = `Generate a concise, meaningful git commit message for the following changes. Only return the message text, nothing else. Focus on WHAT changed and WHY if possible.\n\n${diff.substring(0, 5000)}`;
+          const result = await simpleModel.generateContent(prompt);
+          const text = result.response.text().trim();
+          if (text) {
+            commitMsg = text.replace(/^["']|["']$/g, '');
+          }
+        } catch (genErr) {
+          logInstruction(chatId, 'ERROR', `Failed to generate meaningful commit message: ${genErr}`);
+        }
+        
+        execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
+        logInstruction(chatId, 'SHELL', `Git push completed with message: ${commitMsg}`);
       }
     } catch (e: any) {
       logInstruction(chatId, 'ERROR', `Git sync failed: ${e.message}`);
