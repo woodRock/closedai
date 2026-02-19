@@ -85,39 +85,66 @@ const tools = [
   }
 ];
 
-// 3. Initialize Gemini with a longer timeout (5 minutes)
+// 3. Initialize Gemini with a longer timeout (10 minutes)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
 const model = genAI.getGenerativeModel(
   { model: "gemini-3-flash-preview", tools: tools },
-  { timeout: 300000 }
+  { timeout: 600000 }
 );
 
 // 4. Initialize Telegram with IPv4 agent
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
+  handlerTimeout: 86400000, // 24 hours
   telegram: {
     agent: new https.Agent({ family: 4 })
   }
 });
 
+// Global Error Handler for Telegraf
+bot.catch((err: any, ctx) => {
+  console.error(`🔥 Telegraf error for ${ctx.updateType}:`, err);
+});
+
+// Process-level crash protection
+process.on('uncaughtException', (err) => {
+  console.error('🔥 Uncaught Exception:', err);
+});
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
 const MAX_MESSAGE_LENGTH = 4000;
 async function safeSendMessage(chatId: number, text: string) {
   if (!text) return;
-  if (text.length <= MAX_MESSAGE_LENGTH) {
-    return bot.telegram.sendMessage(chatId, text);
+  try {
+    if (text.length <= MAX_MESSAGE_LENGTH) {
+      return await bot.telegram.sendMessage(chatId, text);
+    }
+    const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated)";
+    return await bot.telegram.sendMessage(chatId, truncated);
+  } catch (e) {
+    console.error("Failed to send message:", e);
   }
-  const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated)";
-  return bot.telegram.sendMessage(chatId, truncated);
 }
 
 async function processOneMessage(userMessage: string, chatId: number, repoRoot: string) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
-    await bot.telegram.sendMessage(chatId, "🛡️ Access Denied: You are not on the whitelist.");
+    await safeSendMessage(chatId, "🛡️ Access Denied: You are not on the whitelist.");
     return;
   }
 
   console.log(`Processing message from ${chatId}: ${userMessage}`);
-  await bot.telegram.sendChatAction(chatId, 'typing');
+  
+  // 1. Pre-set Git Identity so Gemini's own shell commands work
+  try {
+    execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
+    execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
+  } catch (e) {
+    console.warn("Could not set local git config, this might be expected in some environments.");
+  }
+
+  await bot.telegram.sendChatAction(chatId, 'typing').catch(() => {});
 
   const fileStructure = execSync('find . -maxdepth 2 -not -path "*/.*"', { cwd: repoRoot }).toString();
   const packageJson = fs.existsSync(path.join(repoRoot, 'package.json')) 
@@ -139,6 +166,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     - If you are writing or changing code, explain what you did using the 'reply' tool.
     - Use 'reply' for your final response.
     - If a command fails, try to fix it or ask for help.
+    - If you need to commit/push, you can use run_shell or simply let the automated logic handle it at the end.
   `;
 
   const chat = model.startChat({
@@ -201,13 +229,11 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
       turn++;
     }
 
-    // Secure Git Push
+    // Final Secure Git Push
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
         console.log("Committing changes...");
-        execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
-        execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
         execSync('git add .', { cwd: repoRoot });
         execSync('git commit -m "ClosedAI: Automatic update"', { cwd: repoRoot });
         execSync('git push', { cwd: repoRoot });
@@ -219,7 +245,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
 
   } catch (error: any) {
     console.error('Gemini Error:', error);
-    await safeSendMessage(chatId, "❌ Error: " + error.message);
+    await safeSendMessage(chatId, "❌ Gemini Error: " + error.message);
   }
 }
 
@@ -232,16 +258,22 @@ async function run() {
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
         try {
-          await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot);
+          // No await here to ensure Telegraf's polling loop doesn't hang
+          processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(err => {
+            console.error("Async handler error:", err);
+          });
         } catch (err) {
-          console.error("Critical error in message handler:", err);
+          console.error("Critical error in message dispatcher:", err);
         }
       }
     });
     
-    // Disable Telegraf's 90s handler timeout for agentic tasks
     bot.launch({
-      handlerTimeout: 0
+      handlerTimeout: 86400000 // 24 hours
+    }).then(() => {
+      console.log("✅ Bot launched successfully.");
+    }).catch(err => {
+      console.error("Failed to launch bot:", err);
     });
     
     process.once('SIGINT', () => bot.stop('SIGINT'));
@@ -270,4 +302,6 @@ async function run() {
   await lastProcessedRef.set({ update_id: lastUpdateId });
 }
 
-run().catch(console.error);
+run().catch(err => {
+  console.error("Top-level run error:", err);
+});
