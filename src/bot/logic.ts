@@ -29,7 +29,7 @@ export async function safeSendMessage(chatId: number, text: string) {
 
 async function generateCommitMessage(diff: string): Promise<string> {
   try {
-    const messageModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const messageModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
 Do not use markdown formatting. Return ONLY the commit message text.
 
