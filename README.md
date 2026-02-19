@@ -82,11 +82,15 @@ If you want the bot to respond **instantly** (within seconds) instead of waiting
 
 1.  **Clone the repo** to your Raspberry Pi or local machine.
 2.  **Run setup**: `npm run setup` (this creates your `.env`).
-3.  **Start Polling**:
+3.  **Start with Supervisor (Recommended)**:
+    ```bash
+    npm run start:service
+    ```
+    This uses a supervisor process that automatically restarts the bot if it crashes or the connection drops.
+4.  **Alternative (Simple)**:
     ```bash
     npm run start:poll
     ```
-The bot will now listen for messages in real-time. You can leave it running in a `screen` or `tmux` session on your Pi.
 
 ---
 
