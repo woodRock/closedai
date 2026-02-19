@@ -163,7 +163,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     ? fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8') 
     : 'Not found';
   
-  const systemPrompt = `You are ClosedAI. Directory: ${repoRoot}\nStructure: ${fileStructure}\npackage.json: ${packageJson}`;
+  const systemPrompt = `You are ClosedAI. Directory: ${repoRoot}\nStructure: ${fileStructure}\npackage.json: ${packageJson}\nComplete tasks in 10 actions or less.`;
 
   const chat = model.startChat({
     history: [
