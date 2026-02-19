@@ -1,0 +1,32 @@
+name: Deploy React App to Docs
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install Dependencies (React App)
+        run: cd hello-world-react && npm install
+
+      - name: Build React App
+        run: cd hello-world-react && npm run build
+
+      - name: Move Build Output to Docs folder
+        run: mkdir -p docs && cp -r hello-world-react/dist/* docs/
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
+        with:
+          artifact-dir: docs
