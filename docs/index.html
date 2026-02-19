@@ -52,6 +52,7 @@
                 <a href="#features" class="hover:text-white transition">Features</a>
                 <a href="#how-it-works" class="hover:text-white transition">Workflow</a>
                 <a href="#setup" class="hover:text-white transition">Setup</a>
+                <a href="#instant-mode" class="hover:text-white transition">Instant Mode</a>
                 <a href="https://github.com/woodRock/closedai" class="bg-white text-black px-5 py-2 rounded-full hover:bg-gray-200 transition font-bold">Star on GitHub</a>
             </div>
         </div>
@@ -224,6 +225,84 @@
             
             <div class="mt-16 text-center">
                 <a href="https://github.com/woodRock/closedai/fork" class="bg-white text-black px-10 py-4 rounded-2xl font-bold hover:scale-105 transition-transform inline-block">Fork & Deploy Now</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Instant Mode (Local Hosting) -->
+    <section id="instant-mode" class="py-32 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row items-center gap-16">
+                <div class="flex-1">
+                    <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold uppercase tracking-widest mb-6">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
+                        </span>
+                        <span>Real-time Response</span>
+                    </div>
+                    <h2 class="text-4xl md:text-5xl font-extrabold mb-8">⚡ Instant Mode</h2>
+                    <p class="text-xl text-gray-400 leading-relaxed mb-8">
+                        Want responses in seconds? Run ClosedAI on your **Raspberry Pi**, **Home Server**, or **VPS** to bypass the GitHub Action cron delay.
+                    </p>
+                    <div class="space-y-4">
+                        <div class="flex items-start space-x-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-1">
+                                <i class="fas fa-bolt text-[10px]"></i>
+                            </div>
+                            <p class="text-gray-300">Responses in <span class="text-white font-bold">&lt; 3 seconds</span>.</p>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-1">
+                                <i class="fas fa-clock text-[10px]"></i>
+                            </div>
+                            <p class="text-gray-300">Real-time <span class="text-white font-bold">Polling Mode</span> via long-polling.</p>
+                        </div>
+                        <div class="flex items-start space-x-4">
+                            <div class="w-6 h-6 rounded-full bg-blue-500/20 flex items-center justify-center text-blue-400 shrink-0 mt-1">
+                                <i class="fas fa-box text-[10px]"></i>
+                            </div>
+                            <p class="text-gray-300">Docker-ready for <span class="text-white font-bold">Set-and-Forget</span> reliability.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="flex-1 w-full">
+                    <div class="glass p-8 rounded-[2.5rem] border-white/10 shadow-2xl overflow-hidden relative">
+                        <div class="absolute top-0 right-0 p-4 opacity-10">
+                            <i class="fas fa-microchip text-8xl"></i>
+                        </div>
+                        <h4 class="text-xl font-bold mb-6 flex items-center">
+                            <i class="fas fa-terminal mr-3 text-blue-500"></i>
+                            Self-Host Guide
+                        </h4>
+                        <div class="space-y-6">
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3">1. Clone & Install</p>
+                                <div class="bg-black/60 rounded-xl p-4 font-mono text-sm text-blue-300 border border-white/5">
+                                    git clone https://github.com/yourname/closedai.git<br>
+                                    cd closedai && npm install
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3">2. Configure ENV</p>
+                                <div class="bg-black/60 rounded-xl p-4 font-mono text-sm text-purple-300 border border-white/5">
+                                    npm run setup
+                                </div>
+                            </div>
+                            <div>
+                                <p class="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3">3. Start Long-Polling</p>
+                                <div class="bg-black/60 rounded-xl p-4 font-mono text-sm text-green-300 border border-white/5">
+                                    npm run start:poll
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-white/5 flex items-center justify-between">
+                                <p class="text-[10px] text-gray-500 uppercase font-bold">Recommended: Docker</p>
+                                <code class="text-blue-400 text-xs">docker-compose up -d</code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </section>
