@@ -365,7 +365,7 @@ const DocsPage: React.FC = () => {
                         1. Clone &amp; Install
                       </p>
                       <div className="bg-black/60 rounded-xl p-4 font-mono text-sm text-blue-300 border border-white/5">
-                        git clone https://github.com/woodrock/closedai.git<br />
+                        git clone https://github.com/woodrock/closedai.git&lt;br /&gt;
                         cd closedai &amp;&amp; npm install
                       </div>
                     </div>
