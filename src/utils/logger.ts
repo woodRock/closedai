@@ -18,7 +18,8 @@ export function logInstruction(chatId: number, type: string, details: string) {
     'REPLY': pc.green,
     'GEMINI': pc.magenta,
     'ERROR': pc.red,
-    'CMD': pc.white
+    'CMD': pc.white,
+    'INFO': pc.gray
   };
   const color = colorMap[type] || pc.white;
   console.log(`${pc.gray(`[${timestamp}]`)} ${pc.bold(pc.white(`[Chat ${chatId}]`))} ${color(type.padEnd(6))} ${details}`);
