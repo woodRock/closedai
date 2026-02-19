@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx bot.ts",
     "start:poll": "tsx bot.ts --poll",
+    "start:service": "tsx supervisor.ts",
     "setup": "tsx setup.ts",
     "test": "vitest run"
   },
