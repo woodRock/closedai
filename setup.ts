@@ -6,119 +6,126 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Telegraf } from 'telegraf';
 import { initializeApp, cert } from 'firebase-admin/app';
 import { getFirestore } from 'firebase-admin/firestore';
+import pc from 'picocolors';
+import * as cliProgress from 'cli-progress';
 
 const rl = readline.createInterface({
   input: process.stdin,
   output: process.stdout
 });
 
-const question = (query: string): Promise<string> => new Promise((resolve) => rl.question(query, resolve));
+const question = (query: string): Promise<string> => new Promise((resolve) => rl.question(pc.cyan(query), resolve));
 
 async function main() {
   console.clear();
-  console.log("=========================================");
-  console.log("   🤖 CLOSED-AI INSTALLATION WIZARD   ");
-  console.log("=========================================\n");
+  console.log(pc.bold(pc.blue("====================================================")));
+  console.log(pc.bold(pc.blue("       🚀 CLOSED-AI INSTALLATION WIZARD            ")));
+  console.log(pc.bold(pc.blue("====================================================\n")));
 
   // Check GH CLI
   try {
     execSync('gh auth status', { stdio: 'ignore' });
-    console.log("✅ GitHub CLI is authenticated.");
+    console.log(pc.green("✅ GitHub CLI: authenticated."));
   } catch (e) {
-    console.log("❌ GitHub CLI is not authenticated.");
-    console.log("Please run 'gh auth login' first to enable automatic secret setup.\n");
+    console.log(pc.red("❌ GitHub CLI: not authenticated."));
+    console.log(pc.yellow("Please run 'gh auth login' first to enable automatic secret setup.\n"));
     process.exit(1);
   }
 
   // 1. Gemini Setup
-  const geminiKey = (await question("🔑 Enter your Gemini API Key: ")).trim();
+  const geminiKey = (await question("🔑 Gemini API Key: ")).trim();
+  const progressBar = new cliProgress.SingleBar({
+    format: pc.cyan('Validating Gemini API Key |') + pc.blue('{bar}') + '| {percentage}%',
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true
+  });
+  progressBar.start(100, 0);
+
   try {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    // Use gemini-1.5-flash for the validation ping as it is the most widely available
     const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    progressBar.update(50);
     await model.generateContent("ping");
-    console.log("✅ Gemini API Key validated.\n");
+    progressBar.update(100);
+    progressBar.stop();
+    console.log(pc.green("✅ Gemini API Key: validated.\n"));
   } catch (e: any) {
-    console.error("❌ Invalid Gemini API Key or Model access: " + e.message);
-    console.log("Hint: Make sure your API key has access to Gemini 3 Flash in AI Studio.");
+    progressBar.stop();
+    console.error(pc.red("❌ Gemini API Key: invalid: " + e.message));
+    console.log(pc.yellow("Hint: Make sure your API key has access to Gemini 3 Flash in AI Studio."));
     process.exit(1);
   }
 
   // 2. Telegram Setup
-  console.log(`ℹ️  Node.js version: ${process.version}`);
-  const telegramToken = (await question("✉️  Enter your Telegram Bot Token: ")).trim();
+  const telegramToken = (await question("✉️  Telegram Bot Token: ")).trim();
   let botUsername = "";
+  const telegramProgress = new cliProgress.SingleBar({
+    format: pc.cyan('Validating Telegram Bot |') + pc.blue('{bar}') + '| {percentage}%',
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true
+  });
+  telegramProgress.start(100, 0);
+
   try {
     const bot = new Telegraf(telegramToken);
+    telegramProgress.update(50);
     const me = await bot.telegram.getMe();
     botUsername = me.username;
-    console.log(`✅ Telegram Bot Token validated (Bot: @${botUsername}).\n`);
+    telegramProgress.update(100);
+    telegramProgress.stop();
+    console.log(pc.green(`✅ Telegram Bot Token: validated (Bot: @${botUsername}).\n`));
   } catch (e: any) {
-    console.error("❌ Telegram Validation Failed: " + e.message);
-    console.log("--- Raw Error Debug ---");
-    console.log(e);
-    console.log("-----------------------");
-    
-    // Deeper diagnostics for Pi users
-    try {
-      console.log("ℹ️  Running native Node.js HTTPS test...");
-      const https = await import('https');
-      await new Promise((resolve, reject) => {
-        const req = https.get('https://api.telegram.org', { timeout: 5000 }, (res: any) => {
-          console.log(`✅ Native HTTPS check: Received status ${res.statusCode}`);
-          resolve(true);
-        });
-        req.on('error', (err: any) => reject(err));
-        req.on('timeout', () => { req.destroy(); reject(new Error('Timed out')); });
-      });
-    } catch (err: any) {
-      console.log(`❌ Native HTTPS check failed: ${err.message}`);
-    }
-
-    try {
-      execSync('ping -c 1 8.8.8.8', { stdio: 'ignore' });
-      console.log("ℹ️  Internet check: Google (8.8.8.8) is reachable.");
-    } catch {
-      console.log("❌ Internet check: Cannot reach 8.8.8.8. Your Pi might be offline.");
-    }
-
-    try {
-      execSync('nslookup api.telegram.org', { stdio: 'ignore' });
-      console.log("ℹ️  DNS check: api.telegram.org resolved correctly.");
-    } catch {
-      console.log("❌ DNS check: Cannot resolve api.telegram.org. Check your /etc/resolv.conf");
-    }
-
-    console.log("\n⚠️  If curl works but setup fails, your Pi might have IPv6 issues.");
+    telegramProgress.stop();
+    console.error(pc.red("❌ Telegram Validation Failed: " + e.message));
     const skip = await question("❓ Validation failed. Do you want to skip validation and use this token anyway? (y/n): ");
-    if (skip.toLowerCase() === 'y') {
-      console.log("⚠️  Skipping validation. Using provided token...");
-    } else {
+    if (skip.toLowerCase() !== 'y') {
       process.exit(1);
     }
   }
 
   // 3. Security Check
-  const allowedIds = (await question("🛡️  Enter your Telegram User ID(s) for the whitelist (comma-separated, leave blank for public): ")).trim();
+  const allowedIds = (await question("🛡️  Telegram User ID(s) (comma-separated, leave blank for public): ")).trim();
 
   // 4. Firebase Setup
-  const firebasePath = (await question("🔥 Enter path to Firebase JSON (e.g., ./firebase-key.json): ")).trim();
+  const firebasePath = (await question("🔥 Path to Firebase JSON (e.g., ./firebase-key.json): ")).trim();
   let serviceAccountContent = "";
+  const firebaseProgress = new cliProgress.SingleBar({
+    format: pc.cyan('Validating Firebase |') + pc.blue('{bar}') + '| {percentage}%',
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true
+  });
+  firebaseProgress.start(100, 0);
+
   try {
     const fullPath = path.resolve(firebasePath);
     serviceAccountContent = fs.readFileSync(fullPath, 'utf-8');
     const serviceAccount = JSON.parse(serviceAccountContent);
+    firebaseProgress.update(30);
     const app = initializeApp({ credential: cert(serviceAccount) }, "setup");
     const db = getFirestore(app);
+    firebaseProgress.update(70);
     await db.collection('config').doc('test').set({ setup_at: new Date() });
-    console.log("✅ Firebase Service Account validated.\n");
+    firebaseProgress.update(100);
+    firebaseProgress.stop();
+    console.log(pc.green("✅ Firebase: validated.\n"));
   } catch (e: any) {
-    console.error("❌ Invalid Firebase Service Account: " + e.message);
+    firebaseProgress.stop();
+    console.error(pc.red("❌ Firebase Service Account: invalid: " + e.message));
     process.exit(1);
   }
 
   // 5. Automated GitHub Secret Setup
-  console.log("🚀 Setting up GitHub Secrets...");
+  console.log(pc.bold("🚀 Setting up GitHub Secrets..."));
+  const secretProgress = new cliProgress.SingleBar({
+    format: pc.cyan('Configuring GitHub |') + pc.blue('{bar}') + '| {percentage}% | {task}',
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true
+  });
+
   try {
     const secrets = [
       { name: "GEMINI_API_KEY", value: geminiKey },
@@ -127,17 +134,20 @@ async function main() {
       { name: "ALLOWED_TELEGRAM_USER_IDS", value: allowedIds }
     ];
 
-    for (const secret of secrets) {
+    secretProgress.start(secrets.length, 0, { task: 'Initializing' });
+    for (let i = 0; i < secrets.length; i++) {
+      const secret = secrets[i];
       if (secret.value) {
-        process.stdout.write(`   Installing ${secret.name}... `);
+        secretProgress.update(i, { task: secret.name });
         execSync(`gh secret set ${secret.name}`, { input: secret.value });
-        console.log("Done.");
       }
     }
-    console.log("\n✅ GitHub Secrets configured successfully.\n");
+    secretProgress.update(secrets.length, { task: 'Complete' });
+    secretProgress.stop();
+    console.log(pc.green("\n✅ GitHub Secrets: configured successfully.\n"));
   } catch (e: any) {
-    console.error("❌ Error setting GitHub Secrets: " + e.message);
-    console.log("Make sure you are in the correct repository directory.");
+    secretProgress.stop();
+    console.error(pc.red("❌ Error setting GitHub Secrets: " + e.message));
   }
 
   // 6. Generate .env
@@ -147,13 +157,13 @@ FIREBASE_SERVICE_ACCOUNT='${serviceAccountContent.replace(/\n/g, '')}'
 ALLOWED_TELEGRAM_USER_IDS="${allowedIds}"
 `;
   fs.writeFileSync('.env', envContent);
-  console.log("📝 Created .env for local testing.\n");
+  console.log(pc.green("📝 Created .env for local testing.\n"));
 
-  console.log("=========================================");
-  console.log("        🎉 SETUP COMPLETE!               ");
-  console.log("=========================================");
-  console.log(`Your bot @${botUsername} is ready to go.`);
-  console.log("Run 'npm start' to test locally, or 'git push' to deploy to GitHub Actions.\n");
+  console.log(pc.bold(pc.blue("====================================================")));
+  console.log(pc.bold(pc.green("           🎉 SETUP COMPLETE!               ")));
+  console.log(pc.bold(pc.blue("====================================================\n")));
+  console.log(pc.cyan(`Your bot @${botUsername} is ready to go.`));
+  console.log(`Run ${pc.bold('npm start')} to test locally, or ${pc.bold('git push')} to deploy.\n`);
 
   rl.close();
 }
