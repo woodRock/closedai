@@ -5,6 +5,7 @@ import { Telegraf } from 'telegraf';
 import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as https from 'https';
 import 'dotenv/config';
 
 // 0. Validate Environment
@@ -91,8 +92,12 @@ const model = genAI.getGenerativeModel({
   tools: tools,
 });
 
-// 4. Initialize Telegram
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim());
+// 4. Initialize Telegram with IPv4 agent to fix Raspberry Pi networking issues
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
+  telegram: {
+    agent: new https.Agent({ family: 4 })
+  }
+});
 
 const MAX_MESSAGE_LENGTH = 4000;
 async function safeSendMessage(chatId: number, text: string) {
