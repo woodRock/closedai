@@ -17,3 +17,5 @@ closedai-e7fff-firebase-adminsdk-fbsvc-4106ce4aca.json
 .DS_Store
 firebase.json
 .bot.lock
+node_modules/
+dist/
