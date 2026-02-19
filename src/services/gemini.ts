@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { toolDefinitions } from "./tools";
+import { toolDefinitions } from "../tools";
 import { getConfig } from "../utils/config";
 
 const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? "");
