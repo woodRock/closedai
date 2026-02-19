@@ -45,6 +45,32 @@ ${diff.substring(0, 10000)}`;
   }
 }
 
+async function getChatHistory(chatId: number, limit = 20) {
+  const snapshot = await db.collection('history')
+    .where('chatId', '==', chatId)
+    .orderBy('timestamp', 'desc')
+    .limit(limit)
+    .get();
+
+  const docs = snapshot.docs.reverse();
+  const history: any[] = [];
+  let lastRole = 'model'; // The "Ready." message from system prompt is 'model'
+
+  for (const doc of docs) {
+    const data = doc.data();
+    const role = data.role === 'model' ? 'model' : 'user';
+    if (role !== lastRole) {
+      history.push({
+        role,
+        parts: [{ text: data.text }]
+      });
+      lastRole = role;
+    }
+  }
+
+  return history;
+}
+
 export async function processOneMessage(userMessage: string, chatId: number, repoRoot: string, messageId?: string) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
@@ -53,8 +79,12 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     return;
   }
 
+  // Fetch history BEFORE adding current message
+  const pastHistory = await getChatHistory(chatId);
+
   await db.collection('history').add({
     chatId,
+    role: 'user',
     text: userMessage,
     timestamp: FieldValue.serverTimestamp()
   });
@@ -83,7 +113,8 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   const chat = model.startChat({
     history: [
       { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Ready." }] }
+      { role: "model", parts: [{ text: "Ready." }] },
+      ...pastHistory
     ],
   });
 
@@ -101,6 +132,13 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
         if (text) {
           await safeSendMessage(chatId, text);
           logInstruction(chatId, 'GEMINI', 'Final response sent.');
+          
+          await db.collection('history').add({
+            chatId,
+            role: 'model',
+            text: text,
+            timestamp: FieldValue.serverTimestamp()
+          });
         }
         break;
       }

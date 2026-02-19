@@ -17,12 +17,13 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
       await safeSendMessage(chatId, "No history found.");
       return true;
     }
-    let response = `📜 *Recent Commands (Last ${finalLimit}):*\n\n`;
+    let response = `📜 *Recent Activity (Last ${finalLimit}):*\n\n`;
     snapshot.docs.reverse().forEach(doc => {
       const data = doc.data();
       const date = data.timestamp?.toDate().toLocaleTimeString() || 'unknown';
+      const role = data.role === 'model' ? '🤖' : '👤';
       const text = data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text;
-      response += `\`[${date}]\` **${data.chatId}**: ${text}\n`;
+      response += `\`[${date}]\` ${role} **${data.chatId}**: ${text}\n`;
     });
     await safeSendMessage(chatId, response);
     return true;
@@ -84,15 +85,26 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     const snapshot = await db.collection('history').get();
     const total = snapshot.size;
     const userCounts: Record<string, number> = {};
+    let modelCount = 0;
+    let userCount = 0;
+
     snapshot.forEach(doc => {
-      const cid = doc.data().chatId;
-      userCounts[cid] = (userCounts[cid] || 0) + 1;
+      const data = doc.data();
+      const cid = data.chatId;
+      if (data.role === 'model') {
+          modelCount++;
+      } else {
+          userCount++;
+          userCounts[cid] = (userCounts[cid] || 0) + 1;
+      }
     });
 
     let response = `📊 *Usage Statistics*\n\n` +
-      `Total Messages: ${total}\n` +
+      `Total Log Entries: ${total}\n` +
+      `👤 User Messages: ${userCount}\n` +
+      `🤖 Bot Responses: ${modelCount}\n` +
       `Unique Users: ${Object.keys(userCounts).length}\n\n` +
-      `*Activity by User:*\n`;
+      `*User Activity:*\n`;
     
     for (const [id, count] of Object.entries(userCounts)) {
       response += `• \`${id}\`: ${count}\n`;
@@ -128,7 +140,7 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     const response = `🤖 *ClosedAI Help*\n\n` +
       `/status - Show system status & disk usage\n` +
       `/stats - Show usage statistics\n` +
-      `/log [n] - Show last n commands (default 10)\n` +
+      `/log [n] - Show last n messages (default 10)\n` +
       `/git - Show git branch & status\n` +
       `/gitlog - Show last 5 git commits\n` +
       `/queue - Show queued tasks\n` +
