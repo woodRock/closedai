@@ -24,12 +24,12 @@ async function run() {
 
   printHeader();
 
-  // Background queue worker
-  setInterval(() => {
-    checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
-  }, 60000);
-
   if (isPolling) {
+    // Background queue worker
+    setInterval(() => {
+      checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+    }, 60000);
+
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
         processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);
@@ -39,11 +39,19 @@ async function run() {
     return;
   }
 
+  // Batch Process Mode
+  
+  // 1. Process one item from queue if exists
+  await checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+
+  // 2. Process new updates
   const lastProcessedRef = db.collection('config').doc('last_processed');
   const doc = await lastProcessedRef.get();
   let lastUpdateId = doc.exists ? doc.data()?.update_id || 0 : 0;
 
-  const updates = await bot.telegram.getUpdates(100, 100, lastUpdateId + 1, ['message']);
+  // getUpdates(timeout, limit, offset, allowed_updates)
+  // Set timeout to 0 for immediate return if no updates
+  const updates = await bot.telegram.getUpdates(0, 100, lastUpdateId + 1, ['message']);
   for (const update of updates) {
     if ('message' in update && update.message && 'text' in (update.message as any)) {
       const message = update.message as any;
@@ -52,6 +60,12 @@ async function run() {
     }
   }
   await lastProcessedRef.set({ update_id: lastUpdateId });
+  
+  // Ensure we exit
+  process.exit(0);
 }
 
-run().catch(console.error);
+run().catch(err => {
+  console.error(err);
+  process.exit(1);
+});
