@@ -44,7 +44,7 @@ ${diff.substring(0, 10000)}`;
   }
 }
 
-async function getChatHistory(chatId: number, limit = 50) {
+async function getChatHistory(chatId: number, limit = 20) {
   const snapshot = await db.collection('history')
     .where('chatId', '==', chatId)
     .orderBy('timestamp', 'desc')
@@ -118,12 +118,24 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     ? fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8') 
     : 'Not found';
   
-  const systemPrompt = `You are ClosedAI. Directory: ${repoRoot}\nStructure: ${fileStructure}\npackage.json: ${packageJson}\nComplete tasks in 10 actions or less.`;
+  const systemPrompt = `You are ClosedAI, a senior software engineer assistant.
+Current Directory: ${repoRoot}
+Structure: ${fileStructure}
+package.json: ${packageJson}
+
+CRITICAL RULES:
+1. FOCUS: Focus exclusively on the latest user request.
+2. CONTEXT: The chat history contains previous tasks. If a task is already completed (indicated by "Success" messages), DO NOT repeat it.
+3. EFFICIENCY: Complete the task in 10 actions or less.
+4. IDENTITY: Do not search for your own name or model version unless specifically asked.
+5. NO REPETITION: If a tool call has already been made with specific arguments and succeeded, do not repeat it unless the outcome needs to be different.
+
+Ready to assist.`;
 
   const chat = model.startChat({
     history: [
-      { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Ready." }] },
+      { role: "user", parts: [{ text: "Initialize system." }] },
+      { role: "model", parts: [{ text: systemPrompt }] },
       ...geminiHistory
     ],
   });
@@ -201,7 +213,17 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
       const functionResponses = [];
       for (const call of functionCalls) {
         const { name, args } = call;
-        console.log(`   👉 Tool Call: ${name}(${JSON.stringify(args)})`);
+        const argString = JSON.stringify(args);
+        console.log(`   👉 Tool Call: ${name}(${argString})`);
+        
+        // Provide immediate feedback to the user
+        let actionMsg = `🛠️ *Executing:* \`${name}\``;
+        if (name === 'run_shell') actionMsg += `\n\`${args.command}\``;
+        else if (name === 'write_file') actionMsg += ` to \`${args.path}\``;
+        else if (name === 'read_file') actionMsg += ` \`${args.path}\``;
+        
+        await safeSendMessage(chatId, actionMsg);
+
         const content = await executeTool(name, args, repoRoot, chatId, safeSendMessage);
         functionResponses.push({ functionResponse: { name, response: content } });
       }
