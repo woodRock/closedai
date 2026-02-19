@@ -56,13 +56,17 @@ async function getChatHistory(chatId: number, limit = 20) {
 
   for (const doc of docs) {
     const data = doc.data();
-    const role = data.role === 'model' ? 'model' : 'user';
+    let role = data.role;
+    if (role !== 'model' && role !== 'function') {
+      role = 'user';
+    }
     const parts = data.parts || (data.text ? [{ text: data.text }] : []);
     
     if (parts.length === 0) continue;
 
     if (history.length > 0 && history[history.length - 1].role === role) {
-      // Merge parts into the last entry to maintain alternating roles
+      // Merge parts into the last entry to maintain alternating roles (if needed)
+      // Note: role 'function' often has multiple responses in one turn anyway
       history[history.length - 1].parts.push(...parts);
     } else {
       history.push({ role, parts });
@@ -231,7 +235,7 @@ Ready to assist.`;
       // Save tool responses to history
       await db.collection('history').add({
         chatId,
-        role: 'user',
+        role: 'function',
         parts: functionResponses,
         timestamp: FieldValue.serverTimestamp()
       });
