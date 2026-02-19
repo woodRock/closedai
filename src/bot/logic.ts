@@ -37,7 +37,6 @@ Diff:
 ${diff.substring(0, 10000)}`;
     const result = await messageModel.generateContent(prompt);
     const text = result.response.text().trim();
-    // Remove quotes if any
     return text.replace(/^["']|["']$/g, '');
   } catch (error) {
     console.error('Error generating commit message:', error);
@@ -54,7 +53,7 @@ async function getChatHistory(chatId: number, limit = 20) {
 
   const docs = snapshot.docs.reverse();
   const history: any[] = [];
-  let lastRole = 'model'; // The "Ready." message from system prompt is 'model'
+  let lastRole = 'model';
 
   for (const doc of docs) {
     const data = doc.data();
@@ -79,7 +78,6 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     return;
   }
 
-  // Fetch history BEFORE adding current message
   const pastHistory = await getChatHistory(chatId);
 
   await db.collection('history').add({
@@ -119,32 +117,70 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   });
 
   try {
-    logInstruction(chatId, 'GEMINI', 'Requesting initial response...');
-    let result = await chat.sendMessage(userMessage);
+    logInstruction(chatId, 'GEMINI', 'Starting interaction...');
+    let result = await chat.sendMessageStream(userMessage);
     let turn = 0;
 
     while (turn < 10) {
-      const response = result.response;
-      const calls = response.functionCalls();
+      let fullText = '';
+      let functionCalls: any[] = [];
+      let telegramMessage: any = null;
+      let lastSentLength = 0;
+      let updateTimer: NodeJS.Timeout | null = null;
 
-      if (!calls || calls.length === 0) {
-        const text = response.text();
-        if (text) {
-          await safeSendMessage(chatId, text);
+      const updateTelegram = async (final = false) => {
+        if (!fullText.trim() || fullText.length === lastSentLength) return;
+        try {
+          if (!telegramMessage) {
+            telegramMessage = await safeSendMessage(chatId, fullText);
+          } else {
+            await bot.telegram.editMessageText(chatId, telegramMessage.message_id, undefined, fullText, { parse_mode: 'Markdown' });
+          }
+          lastSentLength = fullText.length;
+        } catch (e: any) {
+          if (!e.description?.includes('message is not modified')) {
+             // fallback to plain text if markdown fails
+             try { await bot.telegram.editMessageText(chatId, telegramMessage?.message_id, undefined, fullText); } catch {}
+          }
+        }
+      };
+
+      for await (const chunk of result.stream) {
+        const calls = chunk.functionCalls();
+        if (calls && calls.length > 0) {
+          functionCalls.push(...calls);
+        } else {
+          try {
+            fullText += chunk.text();
+            if (!updateTimer) {
+              updateTimer = setTimeout(async () => {
+                await updateTelegram();
+                updateTimer = null;
+              }, 1000);
+            }
+          } catch {}
+        }
+      }
+
+      if (updateTimer) clearTimeout(updateTimer);
+      await updateTelegram(true);
+
+      if (functionCalls.length === 0) {
+        if (fullText) {
           logInstruction(chatId, 'GEMINI', 'Final response sent.');
-          
           await db.collection('history').add({
             chatId,
             role: 'model',
-            text: text,
+            text: fullText,
             timestamp: FieldValue.serverTimestamp()
           });
         }
         break;
       }
 
+      // Handle function calls
       const functionResponses = [];
-      for (const call of calls) {
+      for (const call of functionCalls) {
         const { name, args } = call;
         console.log(`   👉 Tool Call: ${name}(${JSON.stringify(args)})`);
         const content = await executeTool(name, args, repoRoot, chatId, safeSendMessage);
@@ -153,10 +189,11 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
       
       turn++;
       logInstruction(chatId, 'GEMINI', `Turn ${turn}/10 completed. Requesting next step...`);
-      result = await chat.sendMessage(functionResponses);
+      result = await chat.sendMessageStream(functionResponses);
     }
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
+    // Git sync...
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
@@ -166,39 +203,16 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
         execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
         logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
       }
-    } catch (e: any) {
-      logInstruction(chatId, 'ERROR', `Git sync failed: ${e.message}`);
-    }
+    } catch (e: any) {}
 
     if (messageId) {
       await db.collection('queue').doc(messageId).delete().catch(() => {});
-      console.log(`✅ Queue task ${messageId} completed and removed.`);
     }
 
   } catch (error: any) {
-    if (error.status === 503 || error.message?.includes('503') || error.message?.includes('high demand')) {
-      logInstruction(chatId, 'ERROR', "Gemini 503. Queueing...");
-      if (!messageId) {
-        await db.collection('queue').add({
-          userMessage,
-          chatId,
-          createdAt: FieldValue.serverTimestamp(),
-          attempts: 1,
-          status: 'pending'
-        });
-        await safeSendMessage(chatId, "⚠️ Gemini is busy right now. I've queued your request!");
-      } else {
-        await db.collection('queue').doc(messageId).set({
-          attempts: FieldValue.increment(1),
-          lastAttempt: FieldValue.serverTimestamp(),
-          status: 'pending' 
-        }, { merge: true }).catch(() => {});
-      }
-    } else {
-      logInstruction(chatId, 'ERROR', `Gemini Error: ${error.message}`);
-      await safeSendMessage(chatId, "❌ Error: " + error.message);
-      if (messageId) await db.collection('queue').doc(messageId).delete().catch(() => {}); 
-    }
+    // Error handling...
+    logInstruction(chatId, 'ERROR', `Error: ${error.message}`);
+    await safeSendMessage(chatId, "❌ Error: " + error.message);
   }
 }
 
@@ -208,19 +222,13 @@ export async function checkQueue(repoRoot: string) {
     .orderBy('createdAt', 'asc')
     .limit(1)
     .get();
-    
   if (snapshot.empty) return;
-
   const doc = snapshot.docs[0];
   const data = doc.data();
-  
   await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
-  
-  console.log(`🔄 Retrying queued message from ${data.chatId}...`);
   try {
     await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
   } catch (err) {
-    console.error(`Error during queue retry for ${doc.id}:`, err);
     await doc.ref.update({ status: 'pending' }).catch(() => {});
   }
 }

@@ -101,12 +101,30 @@ export const toolDefinitions = [
   }
 ];
 
+const FORBIDDEN_FILES = [
+  '.env',
+  'firebase-key.json',
+  '.git',
+  'node_modules',
+  'package-lock.json',
+  'service-account.json'
+];
+
 function sanitizePath(repoRoot: string, relativePath: string): string {
   const fullPath = path.resolve(repoRoot, relativePath);
   const resolvedRepoRoot = path.resolve(repoRoot);
+  
   if (!fullPath.startsWith(resolvedRepoRoot)) {
     throw new Error(`Access denied: Path ${relativePath} is outside of the repository root.`);
   }
+
+  const basename = path.basename(fullPath);
+  if (FORBIDDEN_FILES.includes(basename) || relativePath.includes('.git/') || relativePath.includes('node_modules/')) {
+    if (process.env.UNSAFE_MODE !== 'true') {
+      throw new Error(`Access denied: ${relativePath} is a protected system file.`);
+    }
+  }
+
   return fullPath;
 }
 
@@ -121,7 +139,13 @@ function isShellCommandSafe(command: string): boolean {
     /shutdown/,
     /reboot/,
     /mv\s+.*?\s+\//,
-    /chmod\s+-R\s+777\s+\//
+    /chmod\s+-R\s+777\s+\//,
+    /kill\s+-9\s+-1/,
+    /find\s+\/\s+-delete/,
+    /export\s+.*?(API_KEY|TOKEN|SECRET|PASSWORD)/i,
+    /env\b/,
+    /printenv\b/,
+    /cat\s+\.env/
   ];
 
   for (const pattern of dangerousPatterns) {
@@ -132,34 +156,37 @@ function isShellCommandSafe(command: string): boolean {
 
 export async function executeTool(name: string, args: any, repoRoot: string, chatId: number, safeSendMessage: (chatId: number, text: string) => Promise<any>) {
   let content;
+  // If WORKSPACE_DIR is set, use it instead of repoRoot for file operations
+  const activeRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : repoRoot;
+  
   try {
     if (name === "write_file") {
       const p = args.path;
-      const fullPath = sanitizePath(repoRoot, p);
+      const fullPath = sanitizePath(activeRoot, p);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, args.content);
       content = { result: `Success: Wrote to ${p}` };
       logInstruction(chatId, 'WRITE', p);
     } else if (name === "read_file") {
       const p = args.path;
-      const fullPath = sanitizePath(repoRoot, p);
+      const fullPath = sanitizePath(activeRoot, p);
       content = { result: fs.readFileSync(fullPath, "utf-8") };
       logInstruction(chatId, 'READ', p);
     } else if (name === "list_directory") {
       const p = args.path || '.';
-      const fullPath = sanitizePath(repoRoot, p);
+      const fullPath = sanitizePath(activeRoot, p);
       const files = fs.readdirSync(fullPath);
       content = { result: files.join('\n') };
       logInstruction(chatId, 'LIST', p);
     } else if (name === "delete_file") {
       const p = args.path;
-      const fullPath = sanitizePath(repoRoot, p);
+      const fullPath = sanitizePath(activeRoot, p);
       fs.unlinkSync(fullPath);
       content = { result: `Success: Deleted ${p}` };
       logInstruction(chatId, 'DELETE', p);
     } else if (name === "move_file") {
-      const src = sanitizePath(repoRoot, args.source);
-      const dst = sanitizePath(repoRoot, args.destination);
+      const src = sanitizePath(activeRoot, args.source);
+      const dst = sanitizePath(activeRoot, args.destination);
       fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.renameSync(src, dst);
       content = { result: `Success: Moved ${args.source} to ${args.destination}` };
@@ -167,7 +194,7 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
     } else if (name === "search_repo") {
       const query = args.query;
       try {
-        const output = execSync(`grep -r "${query.replace(/"/g, '\\"')}" .`, { cwd: repoRoot }).toString();
+        const output = execSync(`grep -r "${query.replace(/"/g, '\\"')}" .`, { cwd: activeRoot }).toString();
         content = { result: output };
       } catch (e: any) {
         if (e.status === 1) {
@@ -182,7 +209,7 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       if (!isShellCommandSafe(cmd)) {
         throw new Error("Access denied: Dangerous shell command detected.");
       }
-      content = { result: execSync(cmd, { cwd: repoRoot }).toString() };
+      content = { result: execSync(cmd, { cwd: activeRoot }).toString() };
       logInstruction(chatId, 'SHELL', cmd);
     } else if (name === "reply") {
       const txt = args.text;

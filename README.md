@@ -7,26 +7,15 @@
 
 **ClosedAI** is a secure, serverless, and repository-capable automation agent. It allows you to build, refactor, and manage your GitHub repository directly from your phone via Telegram.
 
-No more expensive servers or complex hosting—ClosedAI runs entirely on **GitHub Actions** and uses **Firebase** for persistence.
-
 ---
 
 ## 🌟 Key Features
 
 - **Free Forever**: Powered by GitHub Actions' free tier and Telegram's free Bot API.
 - **Full Repository Access**: Gemini can read files, write code, and run shell commands (like `npm install` or `pytest`).
-- **Secure**: Uses a whitelist system so only you (or your team) can control the bot.
-- **Stateless/Sync**: Synchronizes state via Firebase Firestore, ensuring no commands are missed or duplicated.
+- **Real-time Streaming**: Responses are streamed to Telegram chunk-by-chunk for a smooth user experience.
+- **Secure Sandboxing**: Built-in protections prevent accidental deletion of system files or leakage of environment variables.
 - **Automated Deployment**: Any changes the bot makes are automatically committed and pushed back to your branch.
-
----
-
-## 🛠 Prerequisites
-
-1.  **A GitHub Repository**: Where the bot will run.
-2.  **Telegram Account**: To interact with the bot.
-3.  **Google AI Studio Key**: To access Gemini 3 Flash. [Get it here](https://aistudio.google.com/).
-4.  **Firebase Project**: For message history and state. [Get it here](https://console.firebase.google.com/).
 
 ---
 
@@ -63,53 +52,38 @@ git push
 
 ---
 
-## 💬 Usage
-
-Once deployed, simply message your bot on Telegram:
-
-- **Build features**: *"Add a Python Flask server with a /health endpoint."*
-- **Refactor code**: *"Read bot.ts and suggest improvements for error handling."*
-- **Run commands**: *"Run 'npm test' and tell me the results."*
-- **Manage files**: *"Delete the old temp folder and update the .gitignore."*
-
-The bot polls for new messages every 5 minutes and performs the tasks automatically!
-
----
-
 ## ⚡ Instant Mode (Raspberry Pi / Local)
 
-If you want the bot to respond **instantly** (within seconds) instead of waiting for the GitHub Action cron, you can run it on your own hardware:
+If you want the bot to respond **instantly** instead of waiting for the GitHub Action cron, you can run it on your own hardware:
 
-1.  **Clone the repo** to your Raspberry Pi or local machine.
+1.  **Clone the repo** to your local machine.
 2.  **Run setup**: `npm run setup` (this creates your `.env`).
 3.  **Start with Supervisor (Recommended)**:
     ```bash
     npm run start:service
     ```
-    This uses a supervisor process that automatically restarts the bot if it crashes or the connection drops.
-4.  **Alternative (Simple)**:
-    ```bash
-    npm run start:poll
-    ```
 
 ---
 
-## 🐳 Docker Deployment (Recommended)
+## 🛡 Security & Sandboxing
 
-Running with Docker ensures that your bot stays alive and handles its own environment.
+ClosedAI is designed to be safe even when self-hosted:
 
-1.  **Run setup**: Create your `.env` by running `npm run setup` locally, or rename `.env.example` to `.env` and fill in the values.
-2.  **Start with Docker Compose**:
+- **Path Restriction**: The bot cannot read or write files outside the repository root.
+- **Forbidden Files**: Access to sensitive files like `.env`, `firebase-key.json`, and `.git/` is blocked by default.
+- **Shell Filtering**: Dangerous commands (e.g., `rm -rf /`, fork bombs, or environment variable leaks) are automatically blocked.
+- **Workspace Isolation**: You can set a `WORKSPACE_DIR` environment variable to restrict the bot's operations to a specific sub-folder.
+- **Unsafe Mode**: If you trust the environment, set `UNSAFE_MODE=true` to lift these restrictions.
+
+---
+
+## 🐳 Docker Deployment
+
+1.  **Run setup**: Create your `.env` by running `npm run setup`.
+2.  **Start**:
     ```bash
     docker-compose up -d --build
     ```
-This will start the bot in polling mode. It mounts your project directory as a volume, so the bot can still modify and commit your code!
-
----
-
-## 🛡 Security Note
-
-ClosedAI has full shell access to your repository environment. Always use the `ALLOWED_TELEGRAM_USER_IDS` secret to ensure only authorized users can issue commands.
 
 ---
 Built with ❤️ using [Gemini CLI](https://github.com/google/gemini-cli).
