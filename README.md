@@ -25,7 +25,7 @@ No more expensive servers or complex hosting—ClosedAI runs entirely on **GitHu
 
 1.  **A GitHub Repository**: Where the bot will run.
 2.  **Telegram Account**: To interact with the bot.
-3.  **Google AI Studio Key**: To access Gemini 1.5 Pro. [Get it here](https://aistudio.google.com/).
+3.  **Google AI Studio Key**: To access Gemini 3 Flash. [Get it here](https://aistudio.google.com/).
 4.  **Firebase Project**: For message history and state. [Get it here](https://console.firebase.google.com/).
 
 ---
