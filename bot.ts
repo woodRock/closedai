@@ -79,6 +79,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
   try {
     const result = await model.generateContent([systemPrompt, userMessage]);
     const responseText = result.response.text();
+    console.log(`--- Gemini Response ---\n${responseText}\n-----------------------`);
     
     let actions: any[];
     try {
@@ -101,10 +102,13 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
         }
       } else {
         // Not a JSON response, maybe it's just a text reply
+        console.log("No JSON structure found, treating as plain text reply.");
         await safeSendMessage(chatId, responseText);
         return;
       }
     }
+    
+    console.log(`Parsed ${Array.isArray(actions) ? actions.length : 0} actions.`);
     
     if (Array.isArray(actions)) {
       for (const action of actions) {
