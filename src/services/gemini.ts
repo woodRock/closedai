@@ -1,9 +1,16 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { toolDefinitions } from '../tools/index.js';
-import 'dotenv/config';
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { toolDefinitions } from "./tools";
+import { getConfig } from "../utils/config";
 
-export const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
+const genAI = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY ?? "");
+const config = getConfig();
+
 export const model = genAI.getGenerativeModel(
-  { model: "gemini-2.0-flash", tools: toolDefinitions },
-  { timeout: 600000 }
+  {
+    model: config.model.name,
+    tools: toolDefinitions,
+  },
+  { timeout: config.timeout }
 );
+
+export { genAI };
