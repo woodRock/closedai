@@ -28,7 +28,8 @@ function logInstruction(chatId: number, type: string, details: string) {
     'SHELL': pc.yellow,
     'REPLY': pc.green,
     'GEMINI': pc.magenta,
-    'ERROR': pc.red
+    'ERROR': pc.red,
+    'CMD': pc.white
   };
   const color = colorMap[type] || pc.white;
   console.log(`${pc.gray(`[${timestamp}]`)} ${pc.bold(pc.white(`[Chat ${chatId}]`))} ${color(type.padEnd(6))} ${details}`);
@@ -130,13 +131,103 @@ async function safeSendMessage(chatId: number, text: string) {
   if (!text) return;
   try {
     if (text.length <= MAX_MESSAGE_LENGTH) {
-      return await bot.telegram.sendMessage(chatId, text);
+      return await bot.telegram.sendMessage(chatId, text, { parse_mode: 'Markdown' });
     }
     const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated)";
-    return await bot.telegram.sendMessage(chatId, truncated);
+    return await bot.telegram.sendMessage(chatId, truncated, { parse_mode: 'Markdown' });
   } catch (e) {
-    logInstruction(chatId, 'ERROR', `Failed to send message: ${e}`);
+    try {
+      return await bot.telegram.sendMessage(chatId, text);
+    } catch (e2) {
+      logInstruction(chatId, 'ERROR', `Failed to send message: ${e2}`);
+    }
   }
+}
+
+async function handleSystemCommands(userMessage: string, chatId: number, repoRoot: string): Promise<boolean> {
+  const cmd = userMessage.trim().toLowerCase();
+  
+  if (cmd === '/log') {
+    logInstruction(chatId, 'CMD', 'Executing /log');
+    const snapshot = await db.collection('history').orderBy('timestamp', 'desc').limit(10).get();
+    if (snapshot.empty) {
+      await safeSendMessage(chatId, "No history found.");
+      return true;
+    }
+    let response = "📜 *Recent Commands:*\n\n";
+    snapshot.docs.reverse().forEach(doc => {
+      const data = doc.data();
+      const date = data.timestamp?.toDate().toLocaleTimeString() || 'unknown';
+      response += `\`[${date}]\` ${data.text}\n`;
+    });
+    await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  if (cmd === '/gitlog') {
+    logInstruction(chatId, 'CMD', 'Executing /gitlog');
+    try {
+      const gitLog = execSync('git log -n 5 --pretty=format:"%h - %s (%cr)"', { cwd: repoRoot }).toString();
+      await safeSendMessage(chatId, `🌳 *Recent Commits:*\n\n\`\`\`\n${gitLog}\n\`\`\``);
+    } catch (e: any) {
+      await safeSendMessage(chatId, "❌ Failed to fetch git log: " + e.message);
+    }
+    return true;
+  }
+
+  if (cmd === '/status') {
+    logInstruction(chatId, 'CMD', 'Executing /status');
+    const uptime = process.uptime();
+    const hours = Math.floor(uptime / 3600);
+    const minutes = Math.floor((uptime % 3600) / 60);
+    const seconds = Math.floor(uptime % 60);
+    const mem = process.memoryUsage();
+    
+    let gitHash = 'unknown';
+    try {
+      gitHash = execSync('git rev-parse --short HEAD', { cwd: repoRoot }).toString().trim();
+    } catch {}
+
+    const response = `✅ *System Status*\n\n` +
+      `⏱ *Uptime:* ${hours}h ${minutes}m ${seconds}s\n` +
+      `🧠 *Memory:* ${Math.round(mem.rss / 1024 / 1024)}MB\n` +
+      `📦 *Version:* \`${gitHash}\`\n` +
+      `⚙️ *Mode:* ${process.argv.includes('--poll') ? "Polling" : "Batch"}\n` +
+      `📂 *Root:* \`${repoRoot}\``;
+    
+    await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  if (cmd === '/queue') {
+    logInstruction(chatId, 'CMD', 'Executing /queue');
+    const snapshot = await db.collection('queue').orderBy('createdAt', 'asc').get();
+    if (snapshot.empty) {
+      await safeSendMessage(chatId, "📭 Queue is empty.");
+      return true;
+    }
+    let response = `⏳ *Current Queue (${snapshot.size}):*\n\n`;
+    snapshot.forEach(doc => {
+      const data = doc.data();
+      response += `• \`${data.userMessage.substring(0, 20)}...\` (Attempts: ${data.attempts})\n`;
+    });
+    await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  if (cmd === '/help') {
+    const response = `🤖 *ClosedAI Help*\n\n` +
+      `/status - Show system status\n` +
+      `/log - Show last 10 commands\n` +
+      `/gitlog - Show last 5 git commits\n` +
+      `/queue - Show queued tasks\n` +
+      `/help - Show this message\n\n` +
+      `Any other message will be processed by Gemini.`;
+    await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  return false;
 }
 
 async function processOneMessage(userMessage: string, chatId: number, repoRoot: string, messageId?: string) {
@@ -145,6 +236,20 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     await safeSendMessage(chatId, "🛡️ Access Denied.");
     logInstruction(chatId, 'ERROR', 'Unauthorized access attempt.');
     return;
+  }
+
+  // Record history (ignore system commands in history to keep it clean, or keep them?)
+  // Let's keep them so /log shows what happened.
+  await db.collection('history').add({
+    chatId,
+    text: userMessage,
+    timestamp: FieldValue.serverTimestamp()
+  });
+
+  // Check for commands
+  if (userMessage.startsWith('/')) {
+    const handled = await handleSystemCommands(userMessage, chatId, repoRoot);
+    if (handled) return;
   }
 
   logInstruction(chatId, 'GEMINI', `Processing: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`);
