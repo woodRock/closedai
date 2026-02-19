@@ -101,36 +101,65 @@ export const toolDefinitions = [
   }
 ];
 
+function sanitizePath(repoRoot: string, relativePath: string): string {
+  const fullPath = path.resolve(repoRoot, relativePath);
+  const resolvedRepoRoot = path.resolve(repoRoot);
+  if (!fullPath.startsWith(resolvedRepoRoot)) {
+    throw new Error(`Access denied: Path ${relativePath} is outside of the repository root.`);
+  }
+  return fullPath;
+}
+
+function isShellCommandSafe(command: string): boolean {
+  if (process.env.UNSAFE_MODE === 'true') return true;
+  
+  const dangerousPatterns = [
+    /rm\s+-rf\s+\//,
+    /mkfs/,
+    /dd\s+if=/,
+    /:(){:|:&};:/, // Fork bomb
+    /shutdown/,
+    /reboot/,
+    /mv\s+.*?\s+\//,
+    /chmod\s+-R\s+777\s+\//
+  ];
+
+  for (const pattern of dangerousPatterns) {
+    if (pattern.test(command)) return false;
+  }
+  return true;
+}
+
 export async function executeTool(name: string, args: any, repoRoot: string, chatId: number, safeSendMessage: (chatId: number, text: string) => Promise<any>) {
   let content;
   try {
     if (name === "write_file") {
       const p = args.path;
-      const fullPath = path.join(repoRoot, p);
+      const fullPath = sanitizePath(repoRoot, p);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, args.content);
       content = { result: `Success: Wrote to ${p}` };
       logInstruction(chatId, 'WRITE', p);
     } else if (name === "read_file") {
       const p = args.path;
-      const fullPath = path.join(repoRoot, p);
+      const fullPath = sanitizePath(repoRoot, p);
       content = { result: fs.readFileSync(fullPath, "utf-8") };
       logInstruction(chatId, 'READ', p);
     } else if (name === "list_directory") {
-      const p = args.path;
-      const fullPath = path.join(repoRoot, p);
+      const p = args.path || '.';
+      const fullPath = sanitizePath(repoRoot, p);
       const files = fs.readdirSync(fullPath);
       content = { result: files.join('\n') };
       logInstruction(chatId, 'LIST', p);
     } else if (name === "delete_file") {
       const p = args.path;
-      const fullPath = path.join(repoRoot, p);
+      const fullPath = sanitizePath(repoRoot, p);
       fs.unlinkSync(fullPath);
       content = { result: `Success: Deleted ${p}` };
       logInstruction(chatId, 'DELETE', p);
     } else if (name === "move_file") {
-      const src = path.join(repoRoot, args.source);
-      const dst = path.join(repoRoot, args.destination);
+      const src = sanitizePath(repoRoot, args.source);
+      const dst = sanitizePath(repoRoot, args.destination);
       fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.renameSync(src, dst);
       content = { result: `Success: Moved ${args.source} to ${args.destination}` };
@@ -138,7 +167,7 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
     } else if (name === "search_repo") {
       const query = args.query;
       try {
-        const output = execSync(`grep -r "${query}" .`, { cwd: repoRoot }).toString();
+        const output = execSync(`grep -r "${query.replace(/"/g, '\\"')}" .`, { cwd: repoRoot }).toString();
         content = { result: output };
       } catch (e: any) {
         if (e.status === 1) {
@@ -150,6 +179,9 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       logInstruction(chatId, 'SEARCH', query);
     } else if (name === "run_shell") {
       const cmd = args.command;
+      if (!isShellCommandSafe(cmd)) {
+        throw new Error("Access denied: Dangerous shell command detected.");
+      }
       content = { result: execSync(cmd, { cwd: repoRoot }).toString() };
       logInstruction(chatId, 'SHELL', cmd);
     } else if (name === "reply") {
