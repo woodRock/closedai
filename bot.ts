@@ -169,6 +169,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
       const functionResponses = [];
       for (const call of calls) {
         const { name, args } = call;
+        console.log(`   👉 Tool Call: ${name}(${JSON.stringify(args)})`);
         let content;
         try {
           if (name === "write_file") {
@@ -203,7 +204,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
 
     // Success! If this was a queued message, remove it.
     if (messageId) {
-      await db.collection('queue').doc(messageId).delete();
+      await db.collection('queue').doc(messageId).delete().catch(() => {});
       console.log(`✅ Queue task ${messageId} completed and removed.`);
     }
 
@@ -215,39 +216,59 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
           userMessage,
           chatId,
           createdAt: FieldValue.serverTimestamp(),
-          attempts: 1
+          attempts: 1,
+          status: 'pending'
         });
         await safeSendMessage(chatId, "⚠️ Gemini is busy right now. I've queued your request and will retry automatically!");
       } else {
-        await db.collection('queue').doc(messageId).update({
+        await db.collection('queue').doc(messageId).set({
           attempts: FieldValue.increment(1),
-          lastAttempt: FieldValue.serverTimestamp()
-        });
+          lastAttempt: FieldValue.serverTimestamp(),
+          status: 'pending' // Release the lock so it can be picked up again
+        }, { merge: true }).catch(() => {});
       }
     } else {
       console.error('Gemini Error:', error);
       await safeSendMessage(chatId, "❌ Error: " + error.message);
-      if (messageId) await db.collection('queue').doc(messageId).delete(); // Don't retry non-503 errors
+      if (messageId) await db.collection('queue').doc(messageId).delete().catch(() => {}); 
     }
   }
 }
 
 async function checkQueue(repoRoot: string) {
-  const snapshot = await db.collection('queue').orderBy('createdAt', 'asc').limit(1).get();
+  // Only pick up messages that are 'pending'
+  const snapshot = await db.collection('queue')
+    .where('status', '==', 'pending')
+    .orderBy('createdAt', 'asc')
+    .limit(1)
+    .get();
+    
   if (snapshot.empty) return;
 
   const doc = snapshot.docs[0];
   const data = doc.data();
+  
+  // "Lock" the document by setting status to 'processing'
+  await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
+  
   console.log(`🔄 Retrying queued message from ${data.chatId}...`);
-  await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
+  try {
+    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
+  } catch (err) {
+    console.error(`Error during queue retry for ${doc.id}:`, err);
+    // Ensure we don't leave it stuck in 'processing' on critical failure
+    await doc.ref.update({ status: 'pending' }).catch(() => {});
+  }
 }
 
 async function run() {
   const isPolling = process.argv.includes('--poll');
   const repoRoot = process.cwd();
 
-  // Background queue worker
-  setInterval(() => checkQueue(repoRoot), 60000);
+  // Background queue worker with safety catch
+  setInterval(() => {
+    checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+  }, 60000);
 
   if (isPolling) {
     console.log("🚀 Starting ClosedAI in Long Polling mode...");
