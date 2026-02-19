@@ -12,7 +12,7 @@
 ## 🌟 Key Features
 
 - **Free Forever**: Powered by GitHub Actions' free tier and Telegram's free Bot API.
-- **Full Repository Access**: Gemini can read files, write code, and run shell commands (like `npm install` or `pytest`).
+- **Full Repository Access**: Gemini can read files, write code, and run shell commands (like `npm install` or `vitest`).
 - **Real-time Streaming**: Responses are streamed to Telegram chunk-by-chunk for a smooth user experience.
 - **Secure Sandboxing**: Built-in protections prevent accidental deletion of system files or leakage of environment variables.
 - **Automated Deployment**: Any changes the bot makes are automatically committed and pushed back to your branch.
@@ -56,12 +56,17 @@ git push
 
 If you want the bot to respond **instantly** instead of waiting for the GitHub Action cron, you can run it on your own hardware:
 
-1.  **Clone the repo** to your local machine.
+1.  **Clone the repo**:
+    ```bash
+    git clone https://github.com/woodrock/closedai.git
+    cd closedai && npm install
+    ```
 2.  **Run setup**: `npm run setup` (this creates your `.env`).
 3.  **Start with Supervisor (Recommended)**:
     ```bash
     npm run start:service
     ```
+    *This runs a supervisor that automatically restarts the bot if it crashes or the connection drops.*
 
 ---
 
@@ -86,4 +91,4 @@ ClosedAI is designed to be safe even when self-hosted:
     ```
 
 ---
-Built with ❤️ using [Gemini CLI](https://github.com/google/gemini-cli).
+Built with ❤️ by [woodrock](https://github.com/woodrock).
