@@ -262,7 +262,7 @@ const DocsPage: React.FC = () => {
                     Repository Secrets
                   </h4>
                   <p className="text-gray-400 mb-4 text-sm">
-                    Go to Settings > Secrets > Actions and add the following:
+                    Go to Settings &gt; Secrets &gt; Actions and add the following:
                   </p>
                   <ul className="space-y-2 text-xs font-mono text-blue-300">
                     <li>• TELEGRAM_BOT_TOKEN</li>
@@ -362,11 +362,11 @@ const DocsPage: React.FC = () => {
                   <div className="space-y-6">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-widest font-bold mb-3">
-                        1. Clone & Install
+                        1. Clone &amp; Install
                       </p>
                       <div className="bg-black/60 rounded-xl p-4 font-mono text-sm text-blue-300 border border-white/5">
                         git clone https://github.com/woodrock/closedai.git<br />
-                        cd closedai && npm install
+                        cd closedai &amp;&amp; npm install
                       </div>
                     </div>
                     <div>
@@ -427,7 +427,7 @@ const DocsPage: React.FC = () => {
               const windowHeight = window.innerHeight;
               const elementTop = el.getBoundingClientRect().top;
               const elementVisible = 150;
-              if (elementTop < windowHeight - elementVisible) {
+              if (elementTop &lt; windowHeight - elementVisible) {
                 el.classList.add("active");
               }
             });
