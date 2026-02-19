@@ -93,24 +93,19 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   const history = await getChatHistory(chatId);
   const geminiHistory = [...history];
   
-  // To be used with startChat, history must start with 'user' role
+  // To be used with generateContent, history must start with 'user' role
   while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
     geminiHistory.shift();
   }
-  // And it must end with 'model' role so the next message can be 'user'.
-  // But if the model has a functionCall, it must be followed by functionResponse.
-  // Actually, for startChat, it's safer to end on a plain model turn (text) or a turn that isn't a partial tool turn.
+  // And it must end with 'model' role.
   while (geminiHistory.length > 0) {
     const last = geminiHistory[geminiHistory.length - 1];
     if (last.role === 'model') {
-       // if it has function calls, we need the response too
        if (last.parts.some((p: any) => p.functionCall)) {
-          // check if next one in original history was function
-          // but geminiHistory is what we pass. If it ends on model with calls, it's incomplete.
           geminiHistory.pop();
           continue;
        }
-       break; // Ends on model text, OK
+       break; 
     }
     geminiHistory.pop();
   }
@@ -155,17 +150,17 @@ CRITICAL RULES:
 
 Ready to assist.`;
 
-  const chat = model.startChat({
-    history: [
-      { role: "user", parts: [{ text: "Initialize system." }] },
-      { role: "model", parts: [{ text: systemPrompt }] },
-      ...geminiHistory
-    ],
-  });
+  const currentHistory = [
+    { role: "user", parts: [{ text: "Initialize system." }] },
+    { role: "model", parts: [{ text: systemPrompt }] },
+    ...geminiHistory
+  ];
+
+  // Start with the user message
+  currentHistory.push({ role: 'user', parts: [{ text: userMessage }] });
 
   try {
     logInstruction(chatId, 'GEMINI', 'Starting interaction...');
-    let result = await chat.sendMessageStream(userMessage);
     let turn = 0;
 
     while (turn < 10) {
@@ -173,7 +168,6 @@ Ready to assist.`;
       let telegramMessage: any = null;
       let lastSentLength = 0;
       let updateTimer: NodeJS.Timeout | null = null;
-      const modelTurnParts: any[] = [];
 
       const updateTelegram = async (final = false) => {
         if (!fullText.trim() || fullText.length === lastSentLength) return;
@@ -186,18 +180,14 @@ Ready to assist.`;
           lastSentLength = fullText.length;
         } catch (e: any) {
           if (!e.description?.includes('message is not modified')) {
-             // fallback to plain text if markdown fails
              try { await bot.telegram.editMessageText(chatId, telegramMessage?.message_id, undefined, fullText); } catch {}
           }
         }
       };
 
-      for await (const chunk of result.stream) {
-        const parts = chunk.candidates?.[0]?.content?.parts;
-        if (parts) {
-          modelTurnParts.push(...parts);
-        }
+      const result = await model.generateContentStream({ contents: currentHistory });
 
+      for await (const chunk of result.stream) {
         try {
           const text = chunk.text();
           if (text) {
@@ -215,21 +205,23 @@ Ready to assist.`;
       if (updateTimer) clearTimeout(updateTimer);
       await updateTelegram(true);
 
-      // Save full model turn to history
+      const response = await result.response;
+      const modelTurnParts = response.candidates?.[0]?.content?.parts || [];
+
       if (modelTurnParts.length > 0) {
+        // Save to history and update local history
         await db.collection('history').add({
           chatId,
           role: 'model',
           parts: modelTurnParts,
           timestamp: FieldValue.serverTimestamp()
         });
+        currentHistory.push({ role: 'model', parts: modelTurnParts });
       }
 
-      const functionCalls = modelTurnParts
-        .filter(p => p.functionCall)
-        .map(p => p.functionCall);
+      const functionCalls = response.functionCalls();
 
-      if (functionCalls.length === 0) {
+      if (!functionCalls || functionCalls.length === 0) {
         break;
       }
 
@@ -240,7 +232,6 @@ Ready to assist.`;
         const argString = JSON.stringify(args);
         console.log(`   👉 Tool Call: ${name}(${argString})`);
         
-        // Provide immediate feedback to the user
         let actionMsg = `🛠️ *Executing:* \`${name}\``;
         if (name === 'run_shell') actionMsg += `\n\`${args.command}\``;
         else if (name === 'write_file') actionMsg += ` to \`${args.path}\``;
@@ -252,17 +243,17 @@ Ready to assist.`;
         functionResponses.push({ functionResponse: { name, response: content } });
       }
       
-      // Save tool responses to history
+      // Save tool responses and update local history
       await db.collection('history').add({
         chatId,
         role: 'function',
         parts: functionResponses,
         timestamp: FieldValue.serverTimestamp()
       });
+      currentHistory.push({ role: 'function', parts: functionResponses });
 
       turn++;
       logInstruction(chatId, 'GEMINI', `Turn ${turn}/10 completed. Requesting next step...`);
-      result = await chat.sendMessageStream(functionResponses);
     }
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
