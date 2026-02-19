@@ -62,8 +62,8 @@ async function main() {
     // Deeper diagnostics for Pi users
     try {
       console.log("ℹ️  Running native Node.js HTTPS test...");
+      const https = await import('https');
       await new Promise((resolve, reject) => {
-        const https = require('https');
         const req = https.get('https://api.telegram.org', { timeout: 5000 }, (res: any) => {
           console.log(`✅ Native HTTPS check: Received status ${res.statusCode}`);
           resolve(true);
@@ -89,12 +89,13 @@ async function main() {
       console.log("❌ DNS check: Cannot resolve api.telegram.org. Check your /etc/resolv.conf");
     }
 
-    if (e.code === 'ENOTFOUND') console.log("Hint: DNS Error. Your Pi cannot find api.telegram.org.");
-    if (e.message.includes('ETIMEDOUT')) console.log("Hint: Connection timed out. Check your firewall or internet.");
-    if (e.message.includes('certificate')) console.log("Hint: SSL Error. Check if your Pi's date/time is correct.");
-    if (e.message.includes('ECONNREFUSED')) console.log("Hint: Connection Refused. If curl works, try: 'export NODE_OPTIONS=\"--dns-result-order=ipv4first\"' before running setup.");
-    
-    process.exit(1);
+    console.log("\n⚠️  If curl works but setup fails, your Pi might have IPv6 issues.");
+    const skip = await question("❓ Validation failed. Do you want to skip validation and use this token anyway? (y/n): ");
+    if (skip.toLowerCase() === 'y') {
+      console.log("⚠️  Skipping validation. Using provided token...");
+    } else {
+      process.exit(1);
+    }
   }
 
   // 3. Security Check
