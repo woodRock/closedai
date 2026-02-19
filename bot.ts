@@ -7,11 +7,22 @@ import * as fs from 'fs';
 import * as path from 'path';
 import 'dotenv/config';
 
-// 1. Initialize Firebase with trimmed secrets
+// 0. Validate Environment
+const REQUIRED_ENV = ['FIREBASE_SERVICE_ACCOUNT', 'GEMINI_API_KEY', 'TELEGRAM_BOT_TOKEN'];
+for (const env of REQUIRED_ENV) {
+  if (!process.env[env]) {
+    console.error(`❌ Missing required environment variable: ${env}`);
+    process.exit(1);
+  }
+}
+
+// 1. Initialize Firebase
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT?.trim() || '{}';
-const serviceAccount = JSON.parse(serviceAccountString);
-if (!serviceAccount.project_id) {
-  console.error('FIREBASE_SERVICE_ACCOUNT is missing or invalid.');
+let serviceAccount;
+try {
+  serviceAccount = JSON.parse(serviceAccountString);
+} catch (e) {
+  console.error('❌ FIREBASE_SERVICE_ACCOUNT is not valid JSON.');
   process.exit(1);
 }
 
@@ -57,23 +68,35 @@ const tools = [
           },
           required: ["command"]
         }
+      },
+      {
+        name: "reply",
+        description: "Send a message back to the user in Telegram. Use this to provide progress updates, ask questions, or give a final summary.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            text: { type: SchemaType.STRING, description: "The message text." }
+          },
+          required: ["text"]
+        }
       }
     ]
   }
 ];
 
 // 3. Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY?.trim() || '');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
 const model = genAI.getGenerativeModel({ 
   model: "gemini-3-flash-preview",
   tools: tools,
 });
 
 // 4. Initialize Telegram
-const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN?.trim() || '');
+const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim());
 
 const MAX_MESSAGE_LENGTH = 4000;
 async function safeSendMessage(chatId: number, text: string) {
+  if (!text) return;
   if (text.length <= MAX_MESSAGE_LENGTH) {
     return bot.telegram.sendMessage(chatId, text);
   }
@@ -84,36 +107,39 @@ async function safeSendMessage(chatId: number, text: string) {
 async function processOneMessage(userMessage: string, chatId: number, repoRoot: string) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
-    await bot.telegram.sendMessage(chatId, "Sorry, you are not authorized.");
+    await bot.telegram.sendMessage(chatId, "🛡️ Access Denied: You are not on the whitelist.");
     return;
   }
 
   console.log(`Processing message from ${chatId}: ${userMessage}`);
+  await bot.telegram.sendChatAction(chatId, 'typing');
 
-  const fileStructure = execSync('find . -maxdepth 2 -not -path "*/.*"').toString();
-  const packageJson = fs.existsSync('package.json') ? fs.readFileSync('package.json', 'utf-8') : 'Not found';
+  const fileStructure = execSync('find . -maxdepth 2 -not -path "*/.*"', { cwd: repoRoot }).toString();
+  const packageJson = fs.existsSync(path.join(repoRoot, 'package.json')) 
+    ? fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8') 
+    : 'Not found';
   
   const systemPrompt = `
-    You are ClosedAI, a secure agent.
+    You are ClosedAI, an autonomous agent managing this repository.
     Current Directory: ${repoRoot}
     
     FILE STRUCTURE:
     ${fileStructure}
     
-    KEY FILE (package.json):
+    package.json:
     ${packageJson}
     
     Instructions:
-    - Use the provided tools to fulfill the user's request.
-    - If you can fulfill the request in one turn (e.g., you already know what to write), do it.
-    - If you need more info, use read_file or run_shell.
-    - When finished, provide a final summary of your actions to the user.
+    - Fulfill the user's request using tools.
+    - If you are writing or changing code, explain what you did using the 'reply' tool.
+    - Use 'reply' for your final response.
+    - If a command fails, try to fix it or ask for help.
   `;
 
   const chat = model.startChat({
     history: [
       { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "Understood. I am ready to help with the repository." }] }
+      { role: "model", parts: [{ text: "I have loaded the repository context and am ready to assist." }] }
     ],
   });
 
@@ -126,7 +152,6 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
       const calls = response.functionCalls();
 
       if (!calls || calls.length === 0) {
-        // No more tool calls, send the final text response
         const text = response.text();
         if (text) await safeSendMessage(chatId, text);
         break;
@@ -145,16 +170,16 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
             fs.mkdirSync(path.dirname(fullPath), { recursive: true });
             fs.writeFileSync(fullPath, (args as any).content);
             content = { result: `Success: Wrote to ${(args as any).path}` };
-            console.log(`Wrote file: ${(args as any).path}`);
           } else if (name === "read_file") {
             const fullPath = path.join(repoRoot, (args as any).path);
             const data = fs.readFileSync(fullPath, "utf-8");
             content = { result: data };
-            console.log(`Read file: ${(args as any).path}`);
           } else if (name === "run_shell") {
-            const output = execSync((args as any).command).toString();
+            const output = execSync((args as any).command, { cwd: repoRoot }).toString();
             content = { result: output };
-            console.log(`Ran command: ${(args as any).command}`);
+          } else if (name === "reply") {
+            await safeSendMessage(chatId, (args as any).text);
+            content = { result: "Message sent to user." };
           }
         } catch (e: any) {
           content = { error: e.message };
@@ -166,25 +191,31 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
         });
       }
 
-      // Send the results back to the model
       result = await chat.sendMessage(functionResponses);
       turn++;
     }
 
-    // Git commit/push logic
+    // Secure Git Push
     try {
-      const status = execSync('git status --porcelain').toString();
+      const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
-        execSync('git add . && git commit -m "ClosedAI: Automatic update" && git push');
-        console.log("Changes committed and pushed.");
+        console.log("Committing changes...");
+        // Ensure identity for the commit
+        execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
+        execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
+        
+        execSync('git add .', { cwd: repoRoot });
+        execSync('git commit -m "ClosedAI: Automatic update"', { cwd: repoRoot });
+        execSync('git push', { cwd: repoRoot });
+        console.log("Changes pushed successfully.");
       }
-    } catch (e) {
-      console.error("Git failed:", e);
+    } catch (e: any) {
+      console.error("Git failed:", e.message);
     }
 
   } catch (error: any) {
     console.error('Gemini Error:', error);
-    await safeSendMessage(chatId, "Error: " + error.message);
+    await safeSendMessage(chatId, "❌ Error: " + error.message);
   }
 }
 
@@ -193,7 +224,7 @@ async function run() {
   const repoRoot = process.cwd();
 
   if (isPolling) {
-    console.log("🚀 Starting in Long Polling mode...");
+    console.log("🚀 Starting ClosedAI in Long Polling mode...");
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
         await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot);
@@ -209,7 +240,13 @@ async function run() {
   const doc = await lastProcessedRef.get();
   let lastUpdateId = doc.exists ? doc.data()?.update_id || 0 : 0;
 
+  console.log(`Checking for updates (Last ID: ${lastUpdateId})...`);
   const updates = await bot.telegram.getUpdates(100, 100, lastUpdateId + 1, ['message']);
+  
+  if (updates.length === 0) {
+    console.log("No new messages.");
+  }
+
   for (const update of updates) {
     if ('message' in update && update.message && 'text' in (update.message as any)) {
       const message = update.message as any;
