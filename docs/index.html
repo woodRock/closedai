@@ -1,14 +1,235 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/closedai/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>hello-world-react</title>
-    <script type="module" crossorigin src="/closedai/assets/index-DZ9hkCtd.js"></script>
-    <link rel="stylesheet" crossorigin href="/closedai/assets/index-COcDBgFa.css">
-  </head>
-  <body>
-    <div id="root"></div>
-  </body>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ClosedAI - Secure AI Repository Agent</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        .gradient-text {
+            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-bg {
+            background-image: radial-gradient(circle at 2px 2px, #e2e8f0 1px, transparent 0);
+            background-size: 40px 40px;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 hero-bg">
+
+    <!-- Navbar -->
+    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <div class="flex items-center space-x-2">
+                    <span class="text-2xl">🤖</span>
+                    <span class="text-xl font-bold tracking-tight">ClosedAI</span>
+                </div>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#features" class="text-slate-600 hover:text-blue-600 transition">Features</a>
+                    <a href="#usage" class="text-slate-600 hover:text-blue-600 transition">Usage</a>
+                    <a href="#setup" class="text-slate-600 hover:text-blue-600 transition">Setup</a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <a href="https://github.com/woodRock/closedai" class="text-slate-600 hover:text-slate-900 transition">
+                        <i class="fab fa-github text-2xl"></i>
+                    </a>
+                    <a href="#setup" class="bg-blue-600 text-white px-5 py-2 rounded-full font-medium hover:bg-blue-700 transition shadow-lg shadow-blue-500/20">
+                        Deploy Now
+                    </a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="relative pt-24 pb-32">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <div class="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-8 border border-blue-100">
+                <span>✨</span>
+                <span>The first agent that runs entirely on GitHub Actions</span>
+            </div>
+            <h1 class="text-6xl md:text-8xl font-extrabold mb-8 tracking-tight">
+                Your Repo, <br>
+                <span class="gradient-text text-glow">On Autopilot</span>
+            </h1>
+            <p class="text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed">
+                ClosedAI is a secure, serverless automation agent that lives in your repository. Build features, fix bugs, and run commands—all through a simple Telegram chat.
+            </p>
+            <div class="flex flex-col sm:flex-row justify-center gap-4">
+                <a href="#setup" class="bg-slate-900 text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-slate-800 transition shadow-2xl shadow-slate-900/20">
+                    Get Started Free
+                </a>
+                <a href="#usage" class="bg-white border border-slate-200 text-slate-700 px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-slate-50 transition">
+                    See Examples
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features -->
+    <section id="features" class="py-24 bg-white border-y border-slate-100">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 tracking-tight">The ultimate dev companion</h2>
+                <p class="text-slate-500 text-lg">Powerful features without the overhead of complex hosting.</p>
+            </div>
+            <div class="grid md:grid-cols-3 gap-12">
+                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all duration-300">
+                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-bolt text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Zero Cost</h3>
+                    <p class="text-slate-600 leading-relaxed text-lg">Uses GitHub Actions' free tier and Telegram's free Bot API. No credit card, no servers, no limits.</p>
+                </div>
+                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-purple-200 transition-all duration-300">
+                    <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-lock text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Privacy First</h3>
+                    <p class="text-slate-600 leading-relaxed text-lg">Runs in your own GitHub environment. Your code never leaves your repository except to reach Gemini.</p>
+                </div>
+                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-green-200 transition-all duration-300">
+                    <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                        <i class="fas fa-terminal text-2xl"></i>
+                    </div>
+                    <h3 class="text-2xl font-bold mb-4">Full Control</h3>
+                    <p class="text-slate-600 leading-relaxed text-lg">Execute shell commands, install dependencies, and run tests directly from your phone.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Usage Examples -->
+    <section id="usage" class="py-24">
+        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-white shadow-3xl overflow-hidden relative">
+                <div class="relative z-10">
+                    <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Talk to your code</h2>
+                    <div class="space-y-6 max-w-2xl mx-auto">
+                        <div class="flex items-start space-x-4">
+                            <div class="bg-blue-600 p-3 rounded-2xl rounded-tl-none">
+                                <p class="text-sm md:text-base">"Add a basic Express server with a /health endpoint."</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start justify-end space-x-4">
+                            <div class="bg-slate-800 p-4 rounded-2xl rounded-tr-none border border-slate-700">
+                                <p class="text-sm font-mono text-blue-300 mb-2">ClosedAI:</p>
+                                <p class="text-sm md:text-base">Done! Created server.js and updated package.json. I also ran npm install for you. ✅</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start space-x-4 pt-4">
+                            <div class="bg-blue-600 p-3 rounded-2xl rounded-tl-none">
+                                <p class="text-sm md:text-base">"Refactor the error handling in utils.ts"</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start justify-end space-x-4">
+                            <div class="bg-slate-800 p-4 rounded-2xl rounded-tr-none border border-slate-700">
+                                <p class="text-sm font-mono text-blue-300 mb-2">ClosedAI:</p>
+                                <p class="text-sm md:text-base">Refactored utils.ts to use a centralized error handler. Tests still pass! 🚀</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- Background Decoration -->
+                <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
+                <div class="absolute -top-24 -left-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Setup Guide -->
+    <section id="setup" class="py-24 bg-slate-50">
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="text-center mb-16">
+                <h2 class="text-4xl font-bold mb-4 tracking-tight">Deploy in 5 minutes</h2>
+                <p class="text-slate-500 text-lg">Follow these simple steps to get started.</p>
+            </div>
+            
+            <div class="space-y-4">
+                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden" open>
+                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">1</span>
+                            <h3 class="text-xl font-bold">The Telegram Bot</h3>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <p class="text-slate-600 mb-4">Message <a href="https://t.me/botfather" class="text-blue-600 font-semibold hover:underline">@BotFather</a> on Telegram. Run <code>/newbot</code> and follow the prompts to get your <b>Bot Token</b>.</p>
+                    </div>
+                </details>
+
+                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">2</span>
+                            <h3 class="text-xl font-bold">Firebase Database</h3>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <p class="text-slate-600 mb-2">1. Create a project in the <a href="https://console.firebase.google.com/" class="text-blue-600 font-semibold hover:underline">Firebase Console</a>.</p>
+                        <p class="text-slate-600 mb-2">2. Enable <b>Firestore Database</b>.</p>
+                        <p class="text-slate-600">3. Go to Project Settings > Service Accounts and <b>Generate a new private key</b> (JSON).</p>
+                    </div>
+                </details>
+
+                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">3</span>
+                            <h3 class="text-xl font-bold">GitHub Configuration</h3>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <p class="text-slate-600 mb-4">In your GitHub repository, go to <b>Settings > Secrets and variables > Actions</b> and add these secrets:</p>
+                        <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-blue-300 space-y-2">
+                            <div>TELEGRAM_BOT_TOKEN</div>
+                            <div>GEMINI_API_KEY</div>
+                            <div>FIREBASE_SERVICE_ACCOUNT <span class="text-slate-500">(Full JSON content)</span></div>
+                        </div>
+                    </div>
+                </details>
+
+                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
+                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
+                        <div class="flex items-center space-x-4">
+                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">4</span>
+                            <h3 class="text-xl font-bold">Push to Deploy</h3>
+                        </div>
+                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
+                    </summary>
+                    <div class="p-6 pt-0 border-t border-slate-50">
+                        <p class="text-slate-600 mb-4">Simply push this code to your repository. The GitHub Action will trigger and start listening for your commands!</p>
+                        <code class="block bg-slate-100 p-4 rounded-xl text-sm">git add . && git commit -m "Setup ClosedAI" && git push</code>
+                    </div>
+                </details>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 py-20 border-t border-slate-800">
+        <div class="max-w-7xl mx-auto px-4 text-center">
+            <div class="flex items-center justify-center space-x-2 text-white mb-6">
+                <span class="text-3xl">🤖</span>
+                <span class="text-2xl font-bold">ClosedAI</span>
+            </div>
+            <p class="mb-8 text-lg">Empowering developers to build faster, anywhere.</p>
+            <div class="flex justify-center space-x-8 mb-12">
+                <a href="https://github.com/woodRock/closedai" class="hover:text-white transition text-2xl"><i class="fab fa-github"></i></a>
+                <a href="#" class="hover:text-white transition text-2xl"><i class="fab fa-twitter"></i></a>
+            </div>
+            <p class="text-sm opacity-50">&copy; 2024 ClosedAI. Open source under the MIT License.</p>
+        </div>
+    </footer>
+
+</body>
 </html>
