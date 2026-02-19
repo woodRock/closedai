@@ -81,7 +81,7 @@ describe('Core Logic Integration Tests', () => {
       const mockSendMessageStream = vi.fn().mockResolvedValue({
         stream: (async function* () {
           yield {
-            functionCalls: () => [],
+            candidates: [{ content: { parts: [{ text: 'Hello from Gemini' }] } }],
             text: () => 'Hello from Gemini',
           };
         })(),
@@ -104,7 +104,7 @@ describe('Core Logic Integration Tests', () => {
         .mockResolvedValueOnce({
           stream: (async function* () {
             yield {
-              functionCalls: () => [{ name: 'run_shell', args: { command: 'ls' } }],
+              candidates: [{ content: { parts: [{ functionCall: { name: 'run_shell', args: { command: 'ls' } } }] } }],
               text: () => '',
             };
           })(),
@@ -112,7 +112,7 @@ describe('Core Logic Integration Tests', () => {
         .mockResolvedValueOnce({
           stream: (async function* () {
             yield {
-              functionCalls: () => [],
+              candidates: [{ content: { parts: [{ text: 'Tool result processed' }] } }],
               text: () => 'Tool result processed',
             };
           })(),
@@ -199,7 +199,7 @@ describe('Core Logic Integration Tests', () => {
       const mockSendMessageStream = vi.fn().mockResolvedValue({
         stream: (async function* () {
           yield {
-            functionCalls: () => [],
+            candidates: [{ content: { parts: [{ text: 'Retried successfully' }] } }],
             text: () => 'Retried successfully'
           };
         })(),

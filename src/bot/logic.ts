@@ -170,10 +170,10 @@ Ready to assist.`;
 
     while (turn < 10) {
       let fullText = '';
-      let functionCalls: any[] = [];
       let telegramMessage: any = null;
       let lastSentLength = 0;
       let updateTimer: NodeJS.Timeout | null = null;
+      const modelTurnParts: any[] = [];
 
       const updateTelegram = async (final = false) => {
         if (!fullText.trim() || fullText.length === lastSentLength) return;
@@ -193,40 +193,41 @@ Ready to assist.`;
       };
 
       for await (const chunk of result.stream) {
-        const calls = chunk.functionCalls();
-        if (calls && calls.length > 0) {
-          functionCalls.push(...calls);
-        } else {
-          try {
-            fullText += chunk.text();
+        const parts = chunk.candidates?.[0]?.content?.parts;
+        if (parts) {
+          modelTurnParts.push(...parts);
+        }
+
+        try {
+          const text = chunk.text();
+          if (text) {
+            fullText += text;
             if (!updateTimer) {
               updateTimer = setTimeout(async () => {
                 await updateTelegram();
                 updateTimer = null;
               }, 1000);
             }
-          } catch {}
-        }
+          }
+        } catch {}
       }
 
       if (updateTimer) clearTimeout(updateTimer);
       await updateTelegram(true);
 
-      // Save model turn to history
-      const modelParts: any[] = [];
-      if (fullText) modelParts.push({ text: fullText });
-      for (const call of functionCalls) {
-        modelParts.push({ functionCall: call });
-      }
-
-      if (modelParts.length > 0) {
+      // Save full model turn to history
+      if (modelTurnParts.length > 0) {
         await db.collection('history').add({
           chatId,
           role: 'model',
-          parts: modelParts,
+          parts: modelTurnParts,
           timestamp: FieldValue.serverTimestamp()
         });
       }
+
+      const functionCalls = modelTurnParts
+        .filter(p => p.functionCall)
+        .map(p => p.functionCall);
 
       if (functionCalls.length === 0) {
         break;
