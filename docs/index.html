@@ -1,235 +1,271 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="scroll-smooth">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ClosedAI - Secure AI Repository Agent</title>
+    <title>ClosedAI | The Autonomous GitHub Action Agent</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap');
-        body { font-family: 'Inter', sans-serif; scroll-behavior: smooth; }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #030712;
+            color: #f3f4f6;
+        }
+        .glass {
+            background: rgba(17, 24, 39, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
         .gradient-text {
-            background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+            background: linear-gradient(135deg, #60a5fa 0%, #a855f7 50%, #ec4899 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
         }
-        .hero-bg {
-            background-image: radial-gradient(circle at 2px 2px, #e2e8f0 1px, transparent 0);
-            background-size: 40px 40px;
+        .glow {
+            box-shadow: 0 0 50px -12px rgba(96, 165, 250, 0.5);
+        }
+        @keyframes pulse-slow {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.6; }
+        }
+        .animate-pulse-slow {
+            animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
         }
     </style>
 </head>
-<body class="bg-slate-50 text-slate-900 hero-bg">
+<body class="selection:bg-blue-500/30">
 
     <!-- Navbar -->
-    <nav class="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-slate-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between h-16 items-center">
-                <div class="flex items-center space-x-2">
-                    <span class="text-2xl">🤖</span>
-                    <span class="text-xl font-bold tracking-tight">ClosedAI</span>
+    <nav class="fixed w-full z-50 px-6 py-4">
+        <div class="max-w-7xl mx-auto glass rounded-2xl px-6 py-3 flex justify-between items-center">
+            <div class="flex items-center space-x-3 group cursor-pointer">
+                <div class="w-10 h-10 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg group-hover:rotate-12 transition-transform">
+                    <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
                 </div>
-                <div class="hidden md:flex space-x-8">
-                    <a href="#features" class="text-slate-600 hover:text-blue-600 transition">Features</a>
-                    <a href="#usage" class="text-slate-600 hover:text-blue-600 transition">Usage</a>
-                    <a href="#setup" class="text-slate-600 hover:text-blue-600 transition">Setup</a>
-                </div>
-                <div class="flex items-center space-x-4">
-                    <a href="https://github.com/woodRock/closedai" class="text-slate-600 hover:text-slate-900 transition">
-                        <i class="fab fa-github text-2xl"></i>
-                    </a>
-                    <a href="#setup" class="bg-blue-600 text-white px-5 py-2 rounded-full font-medium hover:bg-blue-700 transition shadow-lg shadow-blue-500/20">
-                        Deploy Now
-                    </a>
-                </div>
+                <span class="text-xl font-bold tracking-tighter">ClosedAI</span>
+            </div>
+            <div class="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-400">
+                <a href="#features" class="hover:text-white transition">Features</a>
+                <a href="#how-it-works" class="hover:text-white transition">Workflow</a>
+                <a href="#setup" class="hover:text-white transition">Setup</a>
+                <a href="https://github.com/woodRock/closedai" class="bg-white text-black px-5 py-2 rounded-full hover:bg-gray-200 transition font-bold">Star on GitHub</a>
             </div>
         </div>
     </nav>
 
     <!-- Hero Section -->
-    <section class="relative pt-24 pb-32">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <div class="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-8 border border-blue-100">
-                <span>✨</span>
-                <span>The first agent that runs entirely on GitHub Actions</span>
-            </div>
-            <h1 class="text-6xl md:text-8xl font-extrabold mb-8 tracking-tight">
-                Your Repo, <br>
-                <span class="gradient-text text-glow">On Autopilot</span>
+    <section class="relative pt-48 pb-32 overflow-hidden">
+        <div class="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] -z-10"></div>
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <h1 class="text-7xl md:text-9xl font-extrabold tracking-tighter mb-8 leading-tight">
+                DevOps on <br>
+                <span class="gradient-text">Autopilot.</span>
             </h1>
-            <p class="text-xl text-slate-600 mb-12 max-w-2xl mx-auto leading-relaxed">
-                ClosedAI is a secure, serverless automation agent that lives in your repository. Build features, fix bugs, and run commands—all through a simple Telegram chat.
+            <p class="text-xl md:text-2xl text-gray-400 max-w-3xl mx-auto mb-12 leading-relaxed font-light">
+                Meet the first autonomous AI agent designed to live inside your <span class="text-white font-medium">GitHub Actions</span>. Build, refactor, and manage your entire codebase via Telegram.
             </p>
-            <div class="flex flex-col sm:flex-row justify-center gap-4">
-                <a href="#setup" class="bg-slate-900 text-white px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-slate-800 transition shadow-2xl shadow-slate-900/20">
-                    Get Started Free
+            <div class="flex flex-col sm:flex-row justify-center gap-6 mb-24">
+                <a href="#setup" class="bg-blue-600 hover:bg-blue-700 text-white px-12 py-5 rounded-2xl text-xl font-bold transition-all shadow-2xl shadow-blue-600/20 flex items-center justify-center space-x-3 group">
+                    <span>Deploy Now</span>
+                    <i class="fas fa-bolt group-hover:text-yellow-400 transition-colors"></i>
                 </a>
-                <a href="#usage" class="bg-white border border-slate-200 text-slate-700 px-10 py-4 rounded-2xl text-lg font-semibold hover:bg-slate-50 transition">
-                    See Examples
+                <a href="https://github.com/woodRock/closedai" class="glass hover:bg-white/10 text-white px-12 py-5 rounded-2xl text-xl font-bold transition-all flex items-center justify-center space-x-3">
+                    <i class="fab fa-github"></i>
+                    <span>View Source</span>
                 </a>
+            </div>
+
+            <!-- Terminal Mockup -->
+            <div class="relative max-w-4xl mx-auto group">
+                <div class="absolute -inset-1 bg-gradient-to-r from-blue-500 to-purple-600 rounded-3xl blur opacity-25 group-hover:opacity-50 transition duration-1000"></div>
+                <div class="relative glass rounded-3xl p-2">
+                    <div class="bg-gray-950 rounded-2xl overflow-hidden border border-white/10">
+                        <div class="bg-white/5 px-6 py-4 flex justify-between items-center border-b border-white/5">
+                            <div class="flex space-x-2">
+                                <div class="w-3 h-3 rounded-full bg-red-500/40"></div>
+                                <div class="w-3 h-3 rounded-full bg-yellow-500/40"></div>
+                                <div class="w-3 h-3 rounded-full bg-green-500/40"></div>
+                            </div>
+                            <div class="text-[10px] text-gray-500 font-mono tracking-widest uppercase flex items-center">
+                                <span class="mr-2 w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                                GitHub Action Active
+                            </div>
+                        </div>
+                        <div class="p-10 text-left font-mono text-sm leading-relaxed">
+                            <div class="mb-6">
+                                <span class="text-blue-400 font-bold">Telegram:</span>
+                                <span class="text-gray-300 ml-2">"Hey ClosedAI, refactor bot.ts to use async/await properly."</span>
+                            </div>
+                            <div class="space-y-2">
+                                <div class="flex items-center space-x-3 text-purple-400">
+                                    <i class="fas fa-cog animate-spin text-xs"></i>
+                                    <span>ClosedAI is analyzing repository...</span>
+                                </div>
+                                <div class="text-gray-500 ml-6">Checking .github/workflows/closedai.yml...</div>
+                                <div class="text-gray-500 ml-6">Reading bot.ts...</div>
+                                <div class="text-green-400 ml-6 mt-4">✔ Applied 3 refactors</div>
+                                <div class="text-green-400 ml-6">✔ Ran npm test (Passed)</div>
+                                <div class="text-green-400 ml-6">✔ Committed & Pushed to main</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it Works (Action Diagram) -->
+    <section id="how-it-works" class="py-32 px-6">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center mb-20">
+                <h2 class="text-4xl font-extrabold mb-4">How it works</h2>
+                <p class="text-gray-400 text-lg">A seamless loop between your phone and your production code.</p>
+            </div>
+            
+            <div class="grid md:grid-cols-4 gap-4 relative">
+                <!-- Connectors (Desktop) -->
+                <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-y-1/2 -z-10"></div>
+                
+                <div class="glass p-8 rounded-3xl text-center">
+                    <div class="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">1</div>
+                    <h4 class="font-bold mb-2">Telegram</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">You send a command via Telegram bot.</p>
+                </div>
+                <div class="glass p-8 rounded-3xl text-center">
+                    <div class="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">2</div>
+                    <h4 class="font-bold mb-2">Firestore</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">Message is securely stored and queued.</p>
+                </div>
+                <div class="glass p-8 rounded-3xl text-center border-blue-500/40 shadow-lg shadow-blue-500/10">
+                    <div class="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center mx-auto mb-6 font-bold">3</div>
+                    <h4 class="font-bold mb-2">GitHub Action</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">Workflow wakes up, pulls the message, and executes.</p>
+                </div>
+                <div class="glass p-8 rounded-3xl text-center">
+                    <div class="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">4</div>
+                    <h4 class="font-bold mb-2">Git Push</h4>
+                    <p class="text-xs text-gray-500 leading-relaxed">Changes are committed and pushed back to your repo.</p>
+                </div>
             </div>
         </div>
     </section>
 
     <!-- Features -->
-    <section id="features" class="py-24 bg-white border-y border-slate-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4 tracking-tight">The ultimate dev companion</h2>
-                <p class="text-slate-500 text-lg">Powerful features without the overhead of complex hosting.</p>
-            </div>
+    <section id="features" class="py-32 bg-white/5 px-6">
+        <div class="max-w-7xl mx-auto">
             <div class="grid md:grid-cols-3 gap-12">
-                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-blue-200 transition-all duration-300">
-                    <div class="w-14 h-14 bg-blue-100 text-blue-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-bolt text-2xl"></i>
+                <div class="space-y-6">
+                    <div class="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-piggy-bank text-white"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Zero Cost</h3>
-                    <p class="text-slate-600 leading-relaxed text-lg">Uses GitHub Actions' free tier and Telegram's free Bot API. No credit card, no servers, no limits.</p>
+                    <h3 class="text-2xl font-bold">Zero Overhead</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">Forget about AWS, Heroku, or DigitalOcean. ClosedAI runs within the generous free tier of GitHub Actions.</p>
                 </div>
-                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-purple-200 transition-all duration-300">
-                    <div class="w-14 h-14 bg-purple-100 text-purple-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-lock text-2xl"></i>
+                <div class="space-y-6">
+                    <div class="w-14 h-14 bg-purple-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-purple-500/30">
+                        <i class="fas fa-brain text-white"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Privacy First</h3>
-                    <p class="text-slate-600 leading-relaxed text-lg">Runs in your own GitHub environment. Your code never leaves your repository except to reach Gemini.</p>
+                    <h3 class="text-2xl font-bold">Powered by Gemini</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">Uses Google's Gemini 1.5 Pro to understand context, write high-quality code, and debug complex issues.</p>
                 </div>
-                <div class="group p-8 rounded-3xl bg-slate-50 border border-slate-100 hover:border-green-200 transition-all duration-300">
-                    <div class="w-14 h-14 bg-green-100 text-green-600 rounded-2xl flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
-                        <i class="fas fa-terminal text-2xl"></i>
+                <div class="space-y-6">
+                    <div class="w-14 h-14 bg-pink-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-pink-500/30">
+                        <i class="fas fa-shield-virus text-white"></i>
                     </div>
-                    <h3 class="text-2xl font-bold mb-4">Full Control</h3>
-                    <p class="text-slate-600 leading-relaxed text-lg">Execute shell commands, install dependencies, and run tests directly from your phone.</p>
+                    <h3 class="text-2xl font-bold">Sandboxed & Secure</h3>
+                    <p class="text-gray-400 leading-relaxed text-lg">Runs in a clean, isolated environment for every task. Only you have the keys to your Kingdom.</p>
                 </div>
             </div>
         </div>
     </section>
 
-    <!-- Usage Examples -->
-    <section id="usage" class="py-24">
-        <div class="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="bg-slate-900 rounded-[2.5rem] p-8 md:p-16 text-white shadow-3xl overflow-hidden relative">
-                <div class="relative z-10">
-                    <h2 class="text-3xl md:text-4xl font-bold mb-12 text-center">Talk to your code</h2>
-                    <div class="space-y-6 max-w-2xl mx-auto">
-                        <div class="flex items-start space-x-4">
-                            <div class="bg-blue-600 p-3 rounded-2xl rounded-tl-none">
-                                <p class="text-sm md:text-base">"Add a basic Express server with a /health endpoint."</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start justify-end space-x-4">
-                            <div class="bg-slate-800 p-4 rounded-2xl rounded-tr-none border border-slate-700">
-                                <p class="text-sm font-mono text-blue-300 mb-2">ClosedAI:</p>
-                                <p class="text-sm md:text-base">Done! Created server.js and updated package.json. I also ran npm install for you. ✅</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start space-x-4 pt-4">
-                            <div class="bg-blue-600 p-3 rounded-2xl rounded-tl-none">
-                                <p class="text-sm md:text-base">"Refactor the error handling in utils.ts"</p>
-                            </div>
-                        </div>
-                        <div class="flex items-start justify-end space-x-4">
-                            <div class="bg-slate-800 p-4 rounded-2xl rounded-tr-none border border-slate-700">
-                                <p class="text-sm font-mono text-blue-300 mb-2">ClosedAI:</p>
-                                <p class="text-sm md:text-base">Refactored utils.ts to use a centralized error handler. Tests still pass! 🚀</p>
-                            </div>
+    <!-- Setup -->
+    <section id="setup" class="py-32 px-6">
+        <div class="max-w-4xl mx-auto glass p-12 rounded-[3rem] relative overflow-hidden">
+            <div class="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
+            <h2 class="text-4xl font-bold mb-12 text-center">Ready to start?</h2>
+            
+            <div class="space-y-12">
+                <div class="flex gap-8">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center font-bold text-gray-500">1</div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Bot Setup</h4>
+                        <p class="text-gray-400 mb-4 text-sm">Create a bot on <a href="https://t.me/botfather" class="text-blue-400 underline">Telegram</a> and copy the token.</p>
+                    </div>
+                </div>
+                <div class="flex gap-8">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center font-bold text-gray-500">2</div>
+                    <div>
+                        <h4 class="text-xl font-bold mb-2 text-white">Repository Secrets</h4>
+                        <p class="text-gray-400 mb-4 text-sm">Go to Settings > Secrets > Actions and add the following:</p>
+                        <ul class="space-y-2 text-xs font-mono text-blue-300">
+                            <li>• TELEGRAM_BOT_TOKEN</li>
+                            <li>• GEMINI_API_KEY</li>
+                            <li>• FIREBASE_SERVICE_ACCOUNT</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="flex gap-8">
+                    <div class="flex-shrink-0 w-10 h-10 rounded-full border border-white/20 flex items-center justify-center font-bold text-gray-500">3</div>
+                    <div class="flex-1">
+                        <h4 class="text-xl font-bold mb-2 text-white">Enable Action</h4>
+                        <p class="text-gray-400 mb-4 text-sm">Push this repository to your GitHub account. The workflow will automatically start every 5 minutes.</p>
+                        <div class="bg-black/40 rounded-xl p-4 flex items-center justify-between">
+                            <code class="text-blue-400 text-sm">git push origin main</code>
+                            <i class="fas fa-check text-green-500"></i>
                         </div>
                     </div>
                 </div>
-                <!-- Background Decoration -->
-                <div class="absolute -bottom-24 -right-24 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl"></div>
-                <div class="absolute -top-24 -left-24 w-64 h-64 bg-purple-500/10 rounded-full blur-3xl"></div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Setup Guide -->
-    <section id="setup" class="py-24 bg-slate-50">
-        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="text-center mb-16">
-                <h2 class="text-4xl font-bold mb-4 tracking-tight">Deploy in 5 minutes</h2>
-                <p class="text-slate-500 text-lg">Follow these simple steps to get started.</p>
             </div>
             
-            <div class="space-y-4">
-                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden" open>
-                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <div class="flex items-center space-x-4">
-                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">1</span>
-                            <h3 class="text-xl font-bold">The Telegram Bot</h3>
-                        </div>
-                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
-                    </summary>
-                    <div class="p-6 pt-0 border-t border-slate-50">
-                        <p class="text-slate-600 mb-4">Message <a href="https://t.me/botfather" class="text-blue-600 font-semibold hover:underline">@BotFather</a> on Telegram. Run <code>/newbot</code> and follow the prompts to get your <b>Bot Token</b>.</p>
-                    </div>
-                </details>
-
-                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <div class="flex items-center space-x-4">
-                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">2</span>
-                            <h3 class="text-xl font-bold">Firebase Database</h3>
-                        </div>
-                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
-                    </summary>
-                    <div class="p-6 pt-0 border-t border-slate-50">
-                        <p class="text-slate-600 mb-2">1. Create a project in the <a href="https://console.firebase.google.com/" class="text-blue-600 font-semibold hover:underline">Firebase Console</a>.</p>
-                        <p class="text-slate-600 mb-2">2. Enable <b>Firestore Database</b>.</p>
-                        <p class="text-slate-600">3. Go to Project Settings > Service Accounts and <b>Generate a new private key</b> (JSON).</p>
-                    </div>
-                </details>
-
-                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <div class="flex items-center space-x-4">
-                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">3</span>
-                            <h3 class="text-xl font-bold">GitHub Configuration</h3>
-                        </div>
-                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
-                    </summary>
-                    <div class="p-6 pt-0 border-t border-slate-50">
-                        <p class="text-slate-600 mb-4">In your GitHub repository, go to <b>Settings > Secrets and variables > Actions</b> and add these secrets:</p>
-                        <div class="bg-slate-900 rounded-xl p-4 font-mono text-sm text-blue-300 space-y-2">
-                            <div>TELEGRAM_BOT_TOKEN</div>
-                            <div>GEMINI_API_KEY</div>
-                            <div>FIREBASE_SERVICE_ACCOUNT <span class="text-slate-500">(Full JSON content)</span></div>
-                        </div>
-                    </div>
-                </details>
-
-                <details class="group bg-white rounded-2xl border border-slate-200 overflow-hidden">
-                    <summary class="flex items-center justify-between p-6 cursor-pointer list-none">
-                        <div class="flex items-center space-x-4">
-                            <span class="w-8 h-8 bg-blue-600 text-white rounded-lg flex items-center justify-center font-bold text-sm">4</span>
-                            <h3 class="text-xl font-bold">Push to Deploy</h3>
-                        </div>
-                        <i class="fas fa-chevron-down text-slate-400 group-open:rotate-180 transition-transform"></i>
-                    </summary>
-                    <div class="p-6 pt-0 border-t border-slate-50">
-                        <p class="text-slate-600 mb-4">Simply push this code to your repository. The GitHub Action will trigger and start listening for your commands!</p>
-                        <code class="block bg-slate-100 p-4 rounded-xl text-sm">git add . && git commit -m "Setup ClosedAI" && git push</code>
-                    </div>
-                </details>
+            <div class="mt-16 text-center">
+                <a href="https://github.com/woodRock/closedai/fork" class="bg-white text-black px-10 py-4 rounded-2xl font-bold hover:scale-105 transition-transform inline-block">Fork & Deploy Now</a>
             </div>
         </div>
     </section>
 
     <!-- Footer -->
-    <footer class="bg-slate-900 text-slate-400 py-20 border-t border-slate-800">
-        <div class="max-w-7xl mx-auto px-4 text-center">
-            <div class="flex items-center justify-center space-x-2 text-white mb-6">
-                <span class="text-3xl">🤖</span>
-                <span class="text-2xl font-bold">ClosedAI</span>
+    <footer class="py-20 border-t border-white/5 px-6 text-center">
+        <div class="flex items-center justify-center space-x-3 mb-8">
+            <div class="w-8 h-8 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+                <i class="fas fa-bolt text-white text-xs"></i>
             </div>
-            <p class="mb-8 text-lg">Empowering developers to build faster, anywhere.</p>
-            <div class="flex justify-center space-x-8 mb-12">
-                <a href="https://github.com/woodRock/closedai" class="hover:text-white transition text-2xl"><i class="fab fa-github"></i></a>
-                <a href="#" class="hover:text-white transition text-2xl"><i class="fab fa-twitter"></i></a>
-            </div>
-            <p class="text-sm opacity-50">&copy; 2024 ClosedAI. Open source under the MIT License.</p>
+            <span class="text-xl font-bold tracking-tighter">ClosedAI</span>
+        </div>
+        <p class="text-gray-500 text-sm mb-8">Empowering developers with autonomous Git workflows.</p>
+        <div class="flex justify-center space-x-8 text-gray-400">
+            <a href="https://github.com/woodRock/closedai" class="hover:text-white transition"><i class="fab fa-github"></i></a>
+            <a href="https://twitter.com" class="hover:text-white transition"><i class="fab fa-twitter"></i></a>
         </div>
     </footer>
 
+    <script>
+        // Reveal elements on scroll
+        const reveal = () => {
+            const reveals = document.querySelectorAll("section");
+            reveals.forEach(el => {
+                const windowHeight = window.innerHeight;
+                const elementTop = el.getBoundingClientRect().top;
+                const elementVisible = 150;
+                if (elementTop < windowHeight - elementVisible) {
+                    el.classList.add("active");
+                }
+            });
+        };
+        window.addEventListener("scroll", reveal);
+        
+        // Add CSS for reveal
+        const style = document.createElement('style');
+        style.innerHTML = `
+            section { opacity: 0; transform: translateY(30px); transition: all 1s ease-out; }
+            section.active { opacity: 1; transform: translateY(0); }
+        `;
+        document.head.appendChild(style);
+        reveal();
+    </script>
 </body>
 </html>
