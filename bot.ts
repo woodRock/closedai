@@ -1,5 +1,5 @@
 import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue } from 'firebase-admin/firestore';
 import { GoogleGenerativeAI, SchemaType } from '@google/generative-ai';
 import { Telegraf } from 'telegraf';
 import { execSync } from 'child_process';
@@ -85,32 +85,23 @@ const tools = [
   }
 ];
 
-// 3. Initialize Gemini with a longer timeout (10 minutes)
+// 3. Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
 const model = genAI.getGenerativeModel(
   { model: "gemini-3-flash-preview", tools: tools },
   { timeout: 600000 }
 );
 
-// 4. Initialize Telegram with IPv4 agent
+// 4. Initialize Telegram
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
-  handlerTimeout: 86400000, // 24 hours
+  handlerTimeout: 86400000,
   telegram: {
     agent: new https.Agent({ family: 4 })
   }
 });
 
-// Global Error Handler for Telegraf
 bot.catch((err: any, ctx) => {
-  console.error(`🔥 Telegraf error for ${ctx.updateType}:`, err);
-});
-
-// Process-level crash protection
-process.on('uncaughtException', (err) => {
-  console.error('🔥 Uncaught Exception:', err);
-});
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('🔥 Unhandled Rejection at:', promise, 'reason:', reason);
+  console.error(`🔥 Telegraf error:`, err);
 });
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -127,22 +118,19 @@ async function safeSendMessage(chatId: number, text: string) {
   }
 }
 
-async function processOneMessage(userMessage: string, chatId: number, repoRoot: string) {
+async function processOneMessage(userMessage: string, chatId: number, repoRoot: string, messageId?: string) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
-    await safeSendMessage(chatId, "🛡️ Access Denied: You are not on the whitelist.");
+    await safeSendMessage(chatId, "🛡️ Access Denied.");
     return;
   }
 
-  console.log(`Processing message from ${chatId}: ${userMessage}`);
+  console.log(`[Processing] ${chatId}: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`);
   
-  // 1. Pre-set Git Identity so Gemini's own shell commands work
   try {
     execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
     execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
-  } catch (e) {
-    console.warn("Could not set local git config, this might be expected in some environments.");
-  }
+  } catch {}
 
   await bot.telegram.sendChatAction(chatId, 'typing').catch(() => {});
 
@@ -152,27 +140,15 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     : 'Not found';
   
   const systemPrompt = `
-    You are ClosedAI, an autonomous agent managing this repository.
-    Current Directory: ${repoRoot}
-    
-    FILE STRUCTURE:
-    ${fileStructure}
-    
-    package.json:
-    ${packageJson}
-    
-    Instructions:
-    - Fulfill the user's request using tools.
-    - If you are writing or changing code, explain what you did using the 'reply' tool.
-    - Use 'reply' for your final response.
-    - If a command fails, try to fix it or ask for help.
-    - If you need to commit/push, you can use run_shell or simply let the automated logic handle it at the end.
+    You are ClosedAI. Directory: ${repoRoot}
+    Structure: ${fileStructure}
+    package.json: ${packageJson}
   `;
 
   const chat = model.startChat({
     history: [
       { role: "user", parts: [{ text: systemPrompt }] },
-      { role: "model", parts: [{ text: "I have loaded the repository context and am ready to assist." }] }
+      { role: "model", parts: [{ text: "Ready." }] }
     ],
   });
 
@@ -190,14 +166,10 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
         break;
       }
 
-      console.log(`--- Turn ${turn + 1}: ${calls.length} function call(s) ---`);
       const functionResponses = [];
-
       for (const call of calls) {
         const { name, args } = call;
-        console.log(`   👉 Tool Call: ${name}(${JSON.stringify(args)})`);
         let content;
-
         try {
           if (name === "write_file") {
             const fullPath = path.join(repoRoot, (args as any).path);
@@ -206,78 +178,85 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
             content = { result: `Success: Wrote to ${(args as any).path}` };
           } else if (name === "read_file") {
             const fullPath = path.join(repoRoot, (args as any).path);
-            const data = fs.readFileSync(fullPath, "utf-8");
-            content = { result: data };
+            content = { result: fs.readFileSync(fullPath, "utf-8") };
           } else if (name === "run_shell") {
-            const output = execSync((args as any).command, { cwd: repoRoot }).toString();
-            content = { result: output };
+            content = { result: execSync((args as any).command, { cwd: repoRoot }).toString() };
           } else if (name === "reply") {
             await safeSendMessage(chatId, (args as any).text);
-            content = { result: "Message sent to user." };
+            content = { result: "Sent." };
           }
         } catch (e: any) {
           content = { error: e.message };
-          console.error(`Tool error (${name}):`, e.message);
         }
-
-        functionResponses.push({
-          functionResponse: { name, response: content }
-        });
+        functionResponses.push({ functionResponse: { name, response: content } });
       }
-
       result = await chat.sendMessage(functionResponses);
       turn++;
     }
 
-    // Final Secure Git Push
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
-        console.log("Committing changes...");
-        execSync('git add .', { cwd: repoRoot });
-        execSync('git commit -m "ClosedAI: Automatic update"', { cwd: repoRoot });
-        execSync('git push', { cwd: repoRoot });
-        console.log("Changes pushed successfully.");
+        execSync('git add . && git commit -m "ClosedAI: Automatic update" && git push', { cwd: repoRoot });
       }
-    } catch (e: any) {
-      console.error("Git failed:", e.message);
+    } catch {}
+
+    // Success! If this was a queued message, remove it.
+    if (messageId) {
+      await db.collection('queue').doc(messageId).delete();
+      console.log(`✅ Queue task ${messageId} completed and removed.`);
     }
 
   } catch (error: any) {
-    console.error('Gemini Error:', error);
-    await safeSendMessage(chatId, "❌ Gemini Error: " + error.message);
+    if (error.status === 503 || error.message?.includes('503') || error.message?.includes('high demand')) {
+      console.warn("⚠️ Gemini 503. Queueing message for retry...");
+      if (!messageId) {
+        await db.collection('queue').add({
+          userMessage,
+          chatId,
+          createdAt: FieldValue.serverTimestamp(),
+          attempts: 1
+        });
+        await safeSendMessage(chatId, "⚠️ Gemini is busy right now. I've queued your request and will retry automatically!");
+      } else {
+        await db.collection('queue').doc(messageId).update({
+          attempts: FieldValue.increment(1),
+          lastAttempt: FieldValue.serverTimestamp()
+        });
+      }
+    } else {
+      console.error('Gemini Error:', error);
+      await safeSendMessage(chatId, "❌ Error: " + error.message);
+      if (messageId) await db.collection('queue').doc(messageId).delete(); // Don't retry non-503 errors
+    }
   }
+}
+
+async function checkQueue(repoRoot: string) {
+  const snapshot = await db.collection('queue').orderBy('createdAt', 'asc').limit(1).get();
+  if (snapshot.empty) return;
+
+  const doc = snapshot.docs[0];
+  const data = doc.data();
+  console.log(`🔄 Retrying queued message from ${data.chatId}...`);
+  await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
 }
 
 async function run() {
   const isPolling = process.argv.includes('--poll');
   const repoRoot = process.cwd();
 
+  // Background queue worker
+  setInterval(() => checkQueue(repoRoot), 60000);
+
   if (isPolling) {
     console.log("🚀 Starting ClosedAI in Long Polling mode...");
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
-        try {
-          // No await here to ensure Telegraf's polling loop doesn't hang
-          processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(err => {
-            console.error("Async handler error:", err);
-          });
-        } catch (err) {
-          console.error("Critical error in message dispatcher:", err);
-        }
+        processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);
       }
     });
-    
-    bot.launch({
-      handlerTimeout: 86400000 // 24 hours
-    }).then(() => {
-      console.log("✅ Bot launched successfully.");
-    }).catch(err => {
-      console.error("Failed to launch bot:", err);
-    });
-    
-    process.once('SIGINT', () => bot.stop('SIGINT'));
-    process.once('SIGTERM', () => bot.stop('SIGTERM'));
+    bot.launch({ handlerTimeout: 86400000 });
     return;
   }
 
@@ -285,23 +264,15 @@ async function run() {
   const doc = await lastProcessedRef.get();
   let lastUpdateId = doc.exists ? doc.data()?.update_id || 0 : 0;
 
-  console.log(`Checking for updates (Last ID: ${lastUpdateId})...`);
   const updates = await bot.telegram.getUpdates(100, 100, lastUpdateId + 1, ['message']);
-  
   for (const update of updates) {
     if ('message' in update && update.message && 'text' in (update.message as any)) {
       const message = update.message as any;
-      try {
-        await processOneMessage(message.text, message.chat.id, repoRoot);
-      } catch (err) {
-        console.error("Critical error in update handler:", err);
-      }
+      await processOneMessage(message.text, message.chat.id, repoRoot);
       lastUpdateId = update.update_id;
     }
   }
   await lastProcessedRef.set({ update_id: lastUpdateId });
 }
 
-run().catch(err => {
-  console.error("Top-level run error:", err);
-});
+run().catch(console.error);
