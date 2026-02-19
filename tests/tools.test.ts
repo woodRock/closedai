@@ -11,6 +11,10 @@ vi.mock('fs', () => ({
   mkdirSync: vi.fn(),
   writeFileSync: vi.fn(),
   readFileSync: vi.fn(),
+  readdirSync: vi.fn(),
+  unlinkSync: vi.fn(),
+  renameSync: vi.fn(),
+  existsSync: vi.fn(),
 }));
 
 describe('Tools Unit Tests', () => {
@@ -33,6 +37,32 @@ describe('Tools Unit Tests', () => {
     const result = await executeTool('read_file', { path: 'test.txt' }, repoRoot, chatId, mockSafeSendMessage);
     expect(fs.readFileSync).toHaveBeenCalledWith(expect.stringContaining('test.txt'), 'utf-8');
     expect(result).toEqual({ result: 'file content' });
+  });
+
+  it('list_directory should call fs.readdirSync', async () => {
+    (fs.readdirSync as any).mockReturnValue(['file1.txt', 'dir1']);
+    const result = await executeTool('list_directory', { path: 'some-dir' }, repoRoot, chatId, mockSafeSendMessage);
+    expect(fs.readdirSync).toHaveBeenCalledWith(expect.stringContaining('some-dir'));
+    expect(result).toEqual({ result: 'file1.txt\ndir1' });
+  });
+
+  it('delete_file should call fs.unlinkSync', async () => {
+    const result = await executeTool('delete_file', { path: 'test.txt' }, repoRoot, chatId, mockSafeSendMessage);
+    expect(fs.unlinkSync).toHaveBeenCalledWith(expect.stringContaining('test.txt'));
+    expect(result).toEqual({ result: 'Success: Deleted test.txt' });
+  });
+
+  it('move_file should call fs.renameSync', async () => {
+    const result = await executeTool('move_file', { source: 'old.txt', destination: 'new.txt' }, repoRoot, chatId, mockSafeSendMessage);
+    expect(fs.renameSync).toHaveBeenCalledWith(expect.stringContaining('old.txt'), expect.stringContaining('new.txt'));
+    expect(result).toEqual({ result: 'Success: Moved old.txt to new.txt' });
+  });
+
+  it('search_repo should call execSync with grep', async () => {
+    (execSync as any).mockReturnValue(Buffer.from('match1\nmatch2'));
+    const result = await executeTool('search_repo', { query: 'search-term' }, repoRoot, chatId, mockSafeSendMessage);
+    expect(execSync).toHaveBeenCalledWith('grep -r "search-term" .', { cwd: repoRoot });
+    expect(result).toEqual({ result: 'match1\nmatch2' });
   });
 
   it('run_shell should call execSync', async () => {

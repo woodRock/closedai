@@ -31,6 +31,51 @@ export const toolDefinitions = [
         }
       },
       {
+        name: "list_directory",
+        description: "List the contents of a directory.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the directory." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "delete_file",
+        description: "Delete a file.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "move_file",
+        description: "Move or rename a file.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            source: { type: SchemaType.STRING, description: "Source relative path." },
+            destination: { type: SchemaType.STRING, description: "Destination relative path." }
+          },
+          required: ["source", "destination"]
+        }
+      },
+      {
+        name: "search_repo",
+        description: "Search for a string in the entire repository using grep.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            query: { type: SchemaType.STRING, description: "The string to search for." }
+          },
+          required: ["query"]
+        }
+      },
+      {
         name: "run_shell",
         description: "Execute a shell command and return the output.",
         parameters: {
@@ -71,6 +116,38 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       const fullPath = path.join(repoRoot, p);
       content = { result: fs.readFileSync(fullPath, "utf-8") };
       logInstruction(chatId, 'READ', p);
+    } else if (name === "list_directory") {
+      const p = args.path;
+      const fullPath = path.join(repoRoot, p);
+      const files = fs.readdirSync(fullPath);
+      content = { result: files.join('\n') };
+      logInstruction(chatId, 'LIST', p);
+    } else if (name === "delete_file") {
+      const p = args.path;
+      const fullPath = path.join(repoRoot, p);
+      fs.unlinkSync(fullPath);
+      content = { result: `Success: Deleted ${p}` };
+      logInstruction(chatId, 'DELETE', p);
+    } else if (name === "move_file") {
+      const src = path.join(repoRoot, args.source);
+      const dst = path.join(repoRoot, args.destination);
+      fs.mkdirSync(path.dirname(dst), { recursive: true });
+      fs.renameSync(src, dst);
+      content = { result: `Success: Moved ${args.source} to ${args.destination}` };
+      logInstruction(chatId, 'MOVE', `${args.source} -> ${args.destination}`);
+    } else if (name === "search_repo") {
+      const query = args.query;
+      try {
+        const output = execSync(`grep -r "${query}" .`, { cwd: repoRoot }).toString();
+        content = { result: output };
+      } catch (e: any) {
+        if (e.status === 1) {
+          content = { result: "No results found." };
+        } else {
+          throw e;
+        }
+      }
+      logInstruction(chatId, 'SEARCH', query);
     } else if (name === "run_shell") {
       const cmd = args.command;
       content = { result: execSync(cmd, { cwd: repoRoot }).toString() };
