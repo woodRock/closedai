@@ -6,33 +6,60 @@ import { execSync } from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';
+import pc from 'picocolors';
+import * as cliProgress from 'cli-progress';
 import 'dotenv/config';
 
-// 0. Validate Environment
+// --- CLI UI Utilities ---
+
+function printHeader() {
+  console.clear();
+  console.log(pc.bold(pc.magenta("====================================================")));
+  console.log(pc.bold(pc.magenta("         🤖 CLOSED-AI BOT ENGINE v1.1              ")));
+  console.log(pc.bold(pc.magenta("====================================================")));
+  console.log(`${pc.gray("Status:")} ${pc.green("Online")}`);
+  console.log(`${pc.gray("Mode:")}   ${process.argv.includes('--poll') ? pc.yellow("Polling") : pc.blue("Batch Process")}`);
+  console.log(pc.gray("----------------------------------------------------\n"));
+}
+
+function logInstruction(chatId: number, type: string, details: string) {
+  const timestamp = new Date().toLocaleTimeString();
+  const colorMap: any = {
+    'WRITE': pc.blue,
+    'READ': pc.cyan,
+    'SHELL': pc.yellow,
+    'REPLY': pc.green,
+    'GEMINI': pc.magenta,
+    'ERROR': pc.red
+  };
+  const color = colorMap[type] || pc.white;
+  console.log(`${pc.gray(`[${timestamp}]`)} ${pc.bold(pc.white(`[Chat ${chatId}]`))} ${color(type.padEnd(6))} ${details}`);
+}
+
+// --- Validation ---
+
 const REQUIRED_ENV = ['FIREBASE_SERVICE_ACCOUNT', 'GEMINI_API_KEY', 'TELEGRAM_BOT_TOKEN'];
 for (const env of REQUIRED_ENV) {
   if (!process.env[env]) {
-    console.error(`❌ Missing required environment variable: ${env}`);
+    console.error(pc.red(`❌ Missing required environment variable: ${env}`));
     process.exit(1);
   }
 }
 
-// 1. Initialize Firebase
+// --- Initialization ---
+
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT?.trim() || '{}';
 let serviceAccount;
 try {
   serviceAccount = JSON.parse(serviceAccountString);
 } catch (e) {
-  console.error('❌ FIREBASE_SERVICE_ACCOUNT is not valid JSON.');
+  console.error(pc.red('❌ FIREBASE_SERVICE_ACCOUNT is not valid JSON.'));
   process.exit(1);
 }
 
-const app = initializeApp({
-  credential: cert(serviceAccount)
-});
+const app = initializeApp({ credential: cert(serviceAccount) });
 const db = getFirestore(app);
 
-// 2. Define Tools for Gemini
 const tools = [
   {
     functionDeclarations: [
@@ -85,23 +112,19 @@ const tools = [
   }
 ];
 
-// 3. Initialize Gemini
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
 const model = genAI.getGenerativeModel(
   { model: "gemini-3-flash-preview", tools: tools },
   { timeout: 600000 }
 );
 
-// 4. Initialize Telegram
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
   handlerTimeout: 86400000,
-  telegram: {
-    agent: new https.Agent({ family: 4 })
-  }
+  telegram: { agent: new https.Agent({ family: 4 }) }
 });
 
-bot.catch((err: any, ctx) => {
-  console.error(`🔥 Telegraf error:`, err);
+bot.catch((err: any) => {
+  logInstruction(0, 'ERROR', `Telegraf error: ${err.message}`);
 });
 
 const MAX_MESSAGE_LENGTH = 4000;
@@ -114,7 +137,7 @@ async function safeSendMessage(chatId: number, text: string) {
     const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + "\n\n... (message truncated)";
     return await bot.telegram.sendMessage(chatId, truncated);
   } catch (e) {
-    console.error("Failed to send message:", e);
+    logInstruction(chatId, 'ERROR', `Failed to send message: ${e}`);
   }
 }
 
@@ -122,10 +145,11 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
     await safeSendMessage(chatId, "🛡️ Access Denied.");
+    logInstruction(chatId, 'ERROR', 'Unauthorized access attempt.');
     return;
   }
 
-  console.log(`[Processing] ${chatId}: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`);
+  logInstruction(chatId, 'GEMINI', `Processing: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`);
   
   try {
     execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
@@ -139,11 +163,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     ? fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8') 
     : 'Not found';
   
-  const systemPrompt = `
-    You are ClosedAI. Directory: ${repoRoot}
-    Structure: ${fileStructure}
-    package.json: ${packageJson}
-  `;
+  const systemPrompt = `You are ClosedAI. Directory: ${repoRoot}\nStructure: ${fileStructure}\npackage.json: ${packageJson}`;
 
   const chat = model.startChat({
     history: [
@@ -152,7 +172,15 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     ],
   });
 
+  const toolProgressBar = new cliProgress.SingleBar({
+    format: pc.magenta('Gemini Thinking |') + pc.blue('{bar}') + '| {step}',
+    barCompleteChar: '\u2588',
+    barIncompleteChar: '\u2591',
+    hideCursor: true
+  });
+
   try {
+    toolProgressBar.start(10, 0, { step: 'Requesting...' });
     let result = await chat.sendMessage(userMessage);
     let turn = 0;
 
@@ -162,7 +190,10 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
 
       if (!calls || calls.length === 0) {
         const text = response.text();
-        if (text) await safeSendMessage(chatId, text);
+        if (text) {
+          await safeSendMessage(chatId, text);
+          logInstruction(chatId, 'GEMINI', 'Final response sent.');
+        }
         break;
       }
 
@@ -172,44 +203,60 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
         let content;
         try {
           if (name === "write_file") {
-            const fullPath = path.join(repoRoot, (args as any).path);
+            const p = (args as any).path;
+            const fullPath = path.join(repoRoot, p);
             fs.mkdirSync(path.dirname(fullPath), { recursive: true });
             fs.writeFileSync(fullPath, (args as any).content);
-            content = { result: `Success: Wrote to ${(args as any).path}` };
+            content = { result: `Success: Wrote to ${p}` };
+            logInstruction(chatId, 'WRITE', p);
           } else if (name === "read_file") {
-            const fullPath = path.join(repoRoot, (args as any).path);
+            const p = (args as any).path;
+            const fullPath = path.join(repoRoot, p);
             content = { result: fs.readFileSync(fullPath, "utf-8") };
+            logInstruction(chatId, 'READ', p);
           } else if (name === "run_shell") {
-            content = { result: execSync((args as any).command, { cwd: repoRoot }).toString() };
+            const cmd = (args as any).command;
+            content = { result: execSync(cmd, { cwd: repoRoot }).toString() };
+            logInstruction(chatId, 'SHELL', cmd);
           } else if (name === "reply") {
-            await safeSendMessage(chatId, (args as any).text);
+            const txt = (args as any).text;
+            await safeSendMessage(chatId, txt);
             content = { result: "Sent." };
+            logInstruction(chatId, 'REPLY', txt.substring(0, 30) + '...');
           }
         } catch (e: any) {
           content = { error: e.message };
+          logInstruction(chatId, 'ERROR', `Tool ${name} failed: ${e.message}`);
         }
         functionResponses.push({ functionResponse: { name, response: content } });
       }
-      result = await chat.sendMessage(functionResponses);
+      
       turn++;
+      toolProgressBar.update(turn, { step: `Step ${turn}` });
+      result = await chat.sendMessage(functionResponses);
     }
+    toolProgressBar.update(10, { step: 'Complete' });
+    toolProgressBar.stop();
 
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
         execSync('git add . && git commit -m "ClosedAI: Automatic update" && git push', { cwd: repoRoot });
+        logInstruction(chatId, 'SHELL', 'Git push completed.');
       }
-    } catch {}
+    } catch (e: any) {
+      logInstruction(chatId, 'ERROR', `Git sync failed: ${e.message}`);
+    }
 
-    // Success! If this was a queued message, remove it.
     if (messageId) {
       await db.collection('queue').doc(messageId).delete();
-      console.log(`✅ Queue task ${messageId} completed and removed.`);
+      logInstruction(chatId, 'GEMINI', `Queue task ${messageId} removed.`);
     }
 
   } catch (error: any) {
+    toolProgressBar.stop();
     if (error.status === 503 || error.message?.includes('503') || error.message?.includes('high demand')) {
-      console.warn("⚠️ Gemini 503. Queueing message for retry...");
+      logInstruction(chatId, 'ERROR', "Gemini 503. Queueing...");
       if (!messageId) {
         await db.collection('queue').add({
           userMessage,
@@ -217,7 +264,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
           createdAt: FieldValue.serverTimestamp(),
           attempts: 1
         });
-        await safeSendMessage(chatId, "⚠️ Gemini is busy right now. I've queued your request and will retry automatically!");
+        await safeSendMessage(chatId, "⚠️ Gemini is busy right now. I've queued your request!");
       } else {
         await db.collection('queue').doc(messageId).update({
           attempts: FieldValue.increment(1),
@@ -225,9 +272,9 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
         });
       }
     } else {
-      console.error('Gemini Error:', error);
+      logInstruction(chatId, 'ERROR', `Gemini Error: ${error.message}`);
       await safeSendMessage(chatId, "❌ Error: " + error.message);
-      if (messageId) await db.collection('queue').doc(messageId).delete(); // Don't retry non-503 errors
+      if (messageId) await db.collection('queue').doc(messageId).delete();
     }
   }
 }
@@ -238,7 +285,7 @@ async function checkQueue(repoRoot: string) {
 
   const doc = snapshot.docs[0];
   const data = doc.data();
-  console.log(`🔄 Retrying queued message from ${data.chatId}...`);
+  logInstruction(data.chatId, 'GEMINI', `Retrying queued message...`);
   await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
 }
 
@@ -246,11 +293,11 @@ async function run() {
   const isPolling = process.argv.includes('--poll');
   const repoRoot = process.cwd();
 
-  // Background queue worker
+  printHeader();
+
   setInterval(() => checkQueue(repoRoot), 60000);
 
   if (isPolling) {
-    console.log("🚀 Starting ClosedAI in Long Polling mode...");
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
         processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);

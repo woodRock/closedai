@@ -16,14 +16,17 @@
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "@types/node": "^25.2.3",
+    "cli-progress": "^3.12.0",
     "dotenv": "^17.3.1",
     "firebase-admin": "^13.6.1",
+    "picocolors": "^1.1.1",
     "telegraf": "^4.16.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
   },
   "devDependencies": {
+    "@types/cli-progress": "^3.11.6",
     "vitest": "^3.0.7"
   }
 }
