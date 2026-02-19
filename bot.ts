@@ -85,14 +85,14 @@ const tools = [
   }
 ];
 
-// 3. Initialize Gemini
+// 3. Initialize Gemini with a longer timeout (5 minutes)
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY!.trim());
-const model = genAI.getGenerativeModel({ 
-  model: "gemini-3-flash-preview",
-  tools: tools,
-});
+const model = genAI.getGenerativeModel(
+  { model: "gemini-3-flash-preview", tools: tools },
+  { timeout: 300000 }
+);
 
-// 4. Initialize Telegram with IPv4 agent to fix Raspberry Pi networking issues
+// 4. Initialize Telegram with IPv4 agent
 const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
   telegram: {
     agent: new https.Agent({ family: 4 })
@@ -205,10 +205,8 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
         console.log("Committing changes...");
-        // Ensure identity for the commit
         execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
         execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
-        
         execSync('git add .', { cwd: repoRoot });
         execSync('git commit -m "ClosedAI: Automatic update"', { cwd: repoRoot });
         execSync('git push', { cwd: repoRoot });
@@ -232,10 +230,19 @@ async function run() {
     console.log("🚀 Starting ClosedAI in Long Polling mode...");
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
-        await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot);
+        try {
+          await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot);
+        } catch (err) {
+          console.error("Critical error in message handler:", err);
+        }
       }
     });
-    bot.launch();
+    
+    // Disable Telegraf's 90s handler timeout for agentic tasks
+    bot.launch({
+      handlerTimeout: 0
+    });
+    
     process.once('SIGINT', () => bot.stop('SIGINT'));
     process.once('SIGTERM', () => bot.stop('SIGTERM'));
     return;
@@ -248,14 +255,14 @@ async function run() {
   console.log(`Checking for updates (Last ID: ${lastUpdateId})...`);
   const updates = await bot.telegram.getUpdates(100, 100, lastUpdateId + 1, ['message']);
   
-  if (updates.length === 0) {
-    console.log("No new messages.");
-  }
-
   for (const update of updates) {
     if ('message' in update && update.message && 'text' in (update.message as any)) {
       const message = update.message as any;
-      await processOneMessage(message.text, message.chat.id, repoRoot);
+      try {
+        await processOneMessage(message.text, message.chat.id, repoRoot);
+      } catch (err) {
+        console.error("Critical error in update handler:", err);
+      }
       lastUpdateId = update.update_id;
     }
   }
