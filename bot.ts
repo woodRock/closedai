@@ -7,13 +7,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import * as https from 'https';
 import pc from 'picocolors';
-import * as cliProgress from 'cli-progress';
 import 'dotenv/config';
 
 // --- CLI UI Utilities ---
 
 function printHeader() {
-  console.clear();
   console.log(pc.bold(pc.magenta("====================================================")));
   console.log(pc.bold(pc.magenta("         🤖 CLOSED-AI BOT ENGINE v1.1              ")));
   console.log(pc.bold(pc.magenta("====================================================")));
@@ -172,15 +170,8 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     ],
   });
 
-  const toolProgressBar = new cliProgress.SingleBar({
-    format: pc.magenta('Gemini Thinking |') + pc.blue('{bar}') + '| {step}',
-    barCompleteChar: '\u2588',
-    barIncompleteChar: '\u2591',
-    hideCursor: true
-  });
-
   try {
-    toolProgressBar.start(10, 0, { step: 'Requesting...' });
+    logInstruction(chatId, 'GEMINI', 'Requesting initial response...');
     let result = await chat.sendMessage(userMessage);
     let turn = 0;
 
@@ -232,11 +223,10 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
       }
       
       turn++;
-      toolProgressBar.update(turn, { step: `Step ${turn}` });
+      logInstruction(chatId, 'GEMINI', `Turn ${turn}/10 completed. Requesting next step...`);
       result = await chat.sendMessage(functionResponses);
     }
-    toolProgressBar.update(10, { step: 'Complete' });
-    toolProgressBar.stop();
+    logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
@@ -254,7 +244,6 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     }
 
   } catch (error: any) {
-    toolProgressBar.stop();
     if (error.status === 503 || error.message?.includes('503') || error.message?.includes('high demand')) {
       logInstruction(chatId, 'ERROR', "Gemini 503. Queueing...");
       if (!messageId) {
