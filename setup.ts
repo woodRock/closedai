@@ -61,6 +61,21 @@ async function main() {
     
     // Deeper diagnostics for Pi users
     try {
+      console.log("ℹ️  Running native Node.js HTTPS test...");
+      await new Promise((resolve, reject) => {
+        const https = require('https');
+        const req = https.get('https://api.telegram.org', { timeout: 5000 }, (res: any) => {
+          console.log(`✅ Native HTTPS check: Received status ${res.statusCode}`);
+          resolve(true);
+        });
+        req.on('error', (err: any) => reject(err));
+        req.on('timeout', () => { req.destroy(); reject(new Error('Timed out')); });
+      });
+    } catch (err: any) {
+      console.log(`❌ Native HTTPS check failed: ${err.message}`);
+    }
+
+    try {
       execSync('ping -c 1 8.8.8.8', { stdio: 'ignore' });
       console.log("ℹ️  Internet check: Google (8.8.8.8) is reachable.");
     } catch {
