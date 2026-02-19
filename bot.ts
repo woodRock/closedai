@@ -146,10 +146,11 @@ async function safeSendMessage(chatId: number, text: string) {
 
 async function handleSystemCommands(userMessage: string, chatId: number, repoRoot: string): Promise<boolean> {
   const parts = userMessage.trim().split(/\s+/);
-  const cmd = parts[0].toLowerCase();
+  const cmd = parts[0]!.toLowerCase();
   
   if (cmd === '/log') {
-    const limit = parts.length > 1 ? parseInt(parts[1]) : 10;
+    const limitArg = parts[1];
+    const limit = limitArg ? parseInt(limitArg) : 10;
     const finalLimit = isNaN(limit) ? 10 : Math.min(Math.max(limit, 1), 50);
 
     logInstruction(chatId, 'CMD', `Executing /log (limit: ${finalLimit})`);
@@ -176,6 +177,18 @@ async function handleSystemCommands(userMessage: string, chatId: number, repoRoo
       await safeSendMessage(chatId, `🌳 *Recent Commits:*\n\n\`\`\`\n${gitLog}\n\`\`\``);
     } catch (e: any) {
       await safeSendMessage(chatId, "❌ Failed to fetch git log: " + e.message);
+    }
+    return true;
+  }
+
+  if (cmd === '/git') {
+    logInstruction(chatId, 'CMD', 'Executing /git');
+    try {
+      const branch = execSync('git rev-parse --abbrev-ref HEAD', { cwd: repoRoot }).toString().trim();
+      const status = execSync('git status --short', { cwd: repoRoot }).toString().trim() || 'Clean';
+      await safeSendMessage(chatId, `🎋 *Git Info*\n\n*Branch:* ${branch}\n*Status:*\n\`\`\`\n${status}\n\`\`\``);
+    } catch (e: any) {
+      await safeSendMessage(chatId, "❌ Failed to fetch git info: " + e.message);
     }
     return true;
   }
@@ -260,6 +273,7 @@ async function handleSystemCommands(userMessage: string, chatId: number, repoRoo
       `/status - Show system status & disk usage\n` +
       `/stats - Show usage statistics\n` +
       `/log [n] - Show last n commands (default 10)\n` +
+      `/git - Show git branch & status\n` +
       `/gitlog - Show last 5 git commits\n` +
       `/queue - Show queued tasks\n` +
       `/ping - Check if bot is alive\n` +
