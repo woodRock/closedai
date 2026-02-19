@@ -45,6 +45,7 @@ async function main() {
   }
 
   // 2. Telegram Setup
+  console.log(`ℹ️  Node.js version: ${process.version}`);
   const telegramToken = (await question("✉️  Enter your Telegram Bot Token: ")).trim();
   let botUsername = "";
   try {
@@ -53,7 +54,31 @@ async function main() {
     botUsername = me.username;
     console.log(`✅ Telegram Bot Token validated (Bot: @${botUsername}).\n`);
   } catch (e: any) {
-    console.error("❌ Invalid Telegram Bot Token: " + e.message);
+    console.error("❌ Telegram Validation Failed: " + e.message);
+    console.log("--- Raw Error Debug ---");
+    console.log(e);
+    console.log("-----------------------");
+    
+    // Deeper diagnostics for Pi users
+    try {
+      execSync('ping -c 1 8.8.8.8', { stdio: 'ignore' });
+      console.log("ℹ️  Internet check: Google (8.8.8.8) is reachable.");
+    } catch {
+      console.log("❌ Internet check: Cannot reach 8.8.8.8. Your Pi might be offline.");
+    }
+
+    try {
+      execSync('nslookup api.telegram.org', { stdio: 'ignore' });
+      console.log("ℹ️  DNS check: api.telegram.org resolved correctly.");
+    } catch {
+      console.log("❌ DNS check: Cannot resolve api.telegram.org. Check your /etc/resolv.conf");
+    }
+
+    if (e.code === 'ENOTFOUND') console.log("Hint: DNS Error. Your Pi cannot find api.telegram.org.");
+    if (e.message.includes('ETIMEDOUT')) console.log("Hint: Connection timed out. Check your firewall or internet.");
+    if (e.message.includes('certificate')) console.log("Hint: SSL Error. Check if your Pi's date/time is correct.");
+    if (e.message.includes('ECONNREFUSED')) console.log("Hint: Connection Refused. If curl works, try: 'export NODE_OPTIONS=\"--dns-result-order=ipv4first\"' before running setup.");
+    
     process.exit(1);
   }
 
