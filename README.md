@@ -89,6 +89,19 @@ The bot will now listen for messages in real-time. You can leave it running in a
 
 ---
 
+## 🐳 Docker Deployment (Recommended)
+
+Running with Docker ensures that your bot stays alive and handles its own environment.
+
+1.  **Run setup**: Create your `.env` by running `npm run setup` locally, or rename `.env.example` to `.env` and fill in the values.
+2.  **Start with Docker Compose**:
+    ```bash
+    docker-compose up -d --build
+    ```
+This will start the bot in polling mode. It mounts your project directory as a volume, so the bot can still modify and commit your code!
+
+---
+
 ## 🛡 Security Note
 
 ClosedAI has full shell access to your repository environment. Always use the `ALLOWED_TELEGRAM_USER_IDS` secret to ensure only authorized users can issue commands.
