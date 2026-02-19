@@ -27,6 +27,24 @@ export async function safeSendMessage(chatId: number, text: string) {
   }
 }
 
+async function generateCommitMessage(diff: string): Promise<string> {
+  try {
+    const messageModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
+Do not use markdown formatting. Return ONLY the commit message text.
+
+Diff:
+${diff.substring(0, 10000)}`;
+    const result = await messageModel.generateContent(prompt);
+    const text = result.response.text().trim();
+    // Remove quotes if any
+    return text.replace(/^["']|["']$/g, '');
+  } catch (error) {
+    console.error('Error generating commit message:', error);
+    return "ClosedAI: Automatic update";
+  }
+}
+
 export async function processOneMessage(userMessage: string, chatId: number, repoRoot: string, messageId?: string) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
@@ -102,25 +120,13 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
     try {
-      execSync('git add .', { cwd: repoRoot });
-      const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
-      
-      if (diff.length > 0) {
-        let commitMsg = "ClosedAI: Automatic update";
-        try {
-          const simpleModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-          const prompt = `Generate a concise, meaningful git commit message for the following changes. Only return the message text, nothing else. Focus on WHAT changed and WHY if possible.\n\n${diff.substring(0, 5000)}`;
-          const result = await simpleModel.generateContent(prompt);
-          const text = result.response.text().trim();
-          if (text) {
-            commitMsg = text.replace(/^["']|["']$/g, '');
-          }
-        } catch (genErr) {
-          logInstruction(chatId, 'ERROR', `Failed to generate meaningful commit message: ${genErr}`);
-        }
-        
+      const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
+      if (status.length > 0) {
+        execSync('git add .', { cwd: repoRoot });
+        const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
+        const commitMsg = await generateCommitMessage(diff);
         execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
-        logInstruction(chatId, 'SHELL', `Git push completed with message: ${commitMsg}`);
+        logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
       }
     } catch (e: any) {
       logInstruction(chatId, 'ERROR', `Git sync failed: ${e.message}`);
