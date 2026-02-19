@@ -1,10 +1,14 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useState } from 'react';
+import reactLogo from './assets/react.svg';
+import viteLogo from '/vite.svg';
+import './App.css';
+import Documentation from './Documentation';
+import Tutorials from './Tutorials';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const [count, setCount] = useState(0);
+  const [showDocs, setShowDocs] = useState(false);
+  const [showTutorials, setShowTutorials] = useState(false);
 
   return (
     <>
@@ -25,11 +29,15 @@ function App() {
           Edit <code>src/App.tsx</code> and save to test HMR
         </p>
       </div>
+      <button onClick={() => setShowDocs(!showDocs)}>Documentation</button>
+      {showDocs && <Documentation />}
+      <button onClick={() => setShowTutorials(!showTutorials)}>Tutorials</button>
+      {showTutorials && <Tutorials />}
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
     </>
-  )
+  );
 }
 
-export default App
+export default App;
