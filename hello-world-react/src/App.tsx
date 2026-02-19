@@ -4,11 +4,13 @@ import viteLogo from '/vite.svg';
 import './App.css';
 import Documentation from './Documentation';
 import Tutorials from './Tutorials';
+import DocsPage from './components/DocsPage';
 
 function App() {
   const [count, setCount] = useState(0);
   const [showDocs, setShowDocs] = useState(false);
   const [showTutorials, setShowTutorials] = useState(false);
+  const [showFullDocs, setShowFullDocs] = useState(false);
 
   return (
     <>
@@ -33,6 +35,8 @@ function App() {
       {showDocs && <Documentation />}
       <button onClick={() => setShowTutorials(!showTutorials)}>Tutorials</button>
       {showTutorials && <Tutorials />}
+      <button onClick={() => setShowFullDocs(!showFullDocs)}>Full Docs</button>
+      {showFullDocs && <DocsPage />}
       <p className="read-the-docs">
         Click on the Vite and React logos to learn more
       </p>
