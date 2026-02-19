@@ -145,20 +145,25 @@ async function safeSendMessage(chatId: number, text: string) {
 }
 
 async function handleSystemCommands(userMessage: string, chatId: number, repoRoot: string): Promise<boolean> {
-  const cmd = userMessage.trim().toLowerCase();
+  const parts = userMessage.trim().split(/\s+/);
+  const cmd = parts[0].toLowerCase();
   
   if (cmd === '/log') {
-    logInstruction(chatId, 'CMD', 'Executing /log');
-    const snapshot = await db.collection('history').orderBy('timestamp', 'desc').limit(10).get();
+    const limit = parts.length > 1 ? parseInt(parts[1]) : 10;
+    const finalLimit = isNaN(limit) ? 10 : Math.min(Math.max(limit, 1), 50);
+
+    logInstruction(chatId, 'CMD', `Executing /log (limit: ${finalLimit})`);
+    const snapshot = await db.collection('history').orderBy('timestamp', 'desc').limit(finalLimit).get();
     if (snapshot.empty) {
       await safeSendMessage(chatId, "No history found.");
       return true;
     }
-    let response = "📜 *Recent Commands:*\n\n";
+    let response = `📜 *Recent Commands (Last ${finalLimit}):*\n\n`;
     snapshot.docs.reverse().forEach(doc => {
       const data = doc.data();
       const date = data.timestamp?.toDate().toLocaleTimeString() || 'unknown';
-      response += `\`[${date}]\` ${data.text}\n`;
+      const text = data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text;
+      response += `\`[${date}]\` **${data.chatId}**: ${text}\n`;
     });
     await safeSendMessage(chatId, response);
     return true;
@@ -188,14 +193,49 @@ async function handleSystemCommands(userMessage: string, chatId: number, repoRoo
       gitHash = execSync('git rev-parse --short HEAD', { cwd: repoRoot }).toString().trim();
     } catch {}
 
+    let diskUsage = 'unknown';
+    try {
+      diskUsage = execSync('df -h . | tail -1 | awk \'{print $5}\'', { cwd: repoRoot }).toString().trim();
+    } catch {}
+
     const response = `✅ *System Status*\n\n` +
       `⏱ *Uptime:* ${hours}h ${minutes}m ${seconds}s\n` +
       `🧠 *Memory:* ${Math.round(mem.rss / 1024 / 1024)}MB\n` +
+      `💾 *Disk Usage:* ${diskUsage}\n` +
       `📦 *Version:* \`${gitHash}\`\n` +
       `⚙️ *Mode:* ${process.argv.includes('--poll') ? "Polling" : "Batch"}\n` +
       `📂 *Root:* \`${repoRoot}\``;
     
     await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  if (cmd === '/stats') {
+    logInstruction(chatId, 'CMD', 'Executing /stats');
+    const snapshot = await db.collection('history').get();
+    const total = snapshot.size;
+    const userCounts: Record<string, number> = {};
+    snapshot.forEach(doc => {
+      const cid = doc.data().chatId;
+      userCounts[cid] = (userCounts[cid] || 0) + 1;
+    });
+
+    let response = `📊 *Usage Statistics*\n\n` +
+      `Total Messages: ${total}\n` +
+      `Unique Users: ${Object.keys(userCounts).length}\n\n` +
+      `*Activity by User:*\n`;
+    
+    for (const [id, count] of Object.entries(userCounts)) {
+      response += `• \`${id}\`: ${count}\n`;
+    }
+    
+    await safeSendMessage(chatId, response);
+    return true;
+  }
+
+  if (cmd === '/ping') {
+    logInstruction(chatId, 'CMD', 'Executing /ping');
+    await safeSendMessage(chatId, "🏓 Pong!");
     return true;
   }
 
@@ -217,10 +257,12 @@ async function handleSystemCommands(userMessage: string, chatId: number, repoRoo
 
   if (cmd === '/help') {
     const response = `🤖 *ClosedAI Help*\n\n` +
-      `/status - Show system status\n` +
-      `/log - Show last 10 commands\n` +
+      `/status - Show system status & disk usage\n` +
+      `/stats - Show usage statistics\n` +
+      `/log [n] - Show last n commands (default 10)\n` +
       `/gitlog - Show last 5 git commits\n` +
       `/queue - Show queued tasks\n` +
+      `/ping - Check if bot is alive\n` +
       `/help - Show this message\n\n` +
       `Any other message will be processed by Gemini.`;
     await safeSendMessage(chatId, response);
@@ -238,8 +280,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
     return;
   }
 
-  // Record history (ignore system commands in history to keep it clean, or keep them?)
-  // Let's keep them so /log shows what happened.
+  // Record history
   await db.collection('history').add({
     chatId,
     text: userMessage,
@@ -405,6 +446,8 @@ async function checkQueue(repoRoot: string) {
 async function run() {
   const isPolling = process.argv.includes('--poll');
   const repoRoot = process.cwd();
+
+  printHeader();
 
   // Background queue worker with safety catch
   setInterval(() => {
