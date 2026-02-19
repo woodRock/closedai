@@ -56,17 +56,23 @@ async function getChatHistory(chatId: number, limit = 20) {
 
   for (const doc of docs) {
     const data = doc.data();
-    let role = data.role;
-    if (role !== 'model' && role !== 'function') {
-      role = 'user';
-    }
     const parts = data.parts || (data.text ? [{ text: data.text }] : []);
-    
     if (parts.length === 0) continue;
 
+    // Determine the correct role based on content
+    let role = data.role;
+    const hasFunctionResponse = parts.some((p: any) => p.functionResponse);
+    const hasFunctionCall = parts.some((p: any) => p.functionCall);
+
+    if (hasFunctionResponse) {
+      role = 'function';
+    } else if (hasFunctionCall || role === 'model') {
+      role = 'model';
+    } else {
+      role = 'user';
+    }
+    
     if (history.length > 0 && history[history.length - 1].role === role) {
-      // Merge parts into the last entry to maintain alternating roles (if needed)
-      // Note: role 'function' often has multiple responses in one turn anyway
       history[history.length - 1].parts.push(...parts);
     } else {
       history.push({ role, parts });
@@ -91,8 +97,21 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
     geminiHistory.shift();
   }
-  // And it must end with 'model' role so the next message can be 'user'
-  while (geminiHistory.length > 0 && geminiHistory[geminiHistory.length - 1].role !== 'model') {
+  // And it must end with 'model' role so the next message can be 'user'.
+  // But if the model has a functionCall, it must be followed by functionResponse.
+  // Actually, for startChat, it's safer to end on a plain model turn (text) or a turn that isn't a partial tool turn.
+  while (geminiHistory.length > 0) {
+    const last = geminiHistory[geminiHistory.length - 1];
+    if (last.role === 'model') {
+       // if it has function calls, we need the response too
+       if (last.parts.some((p: any) => p.functionCall)) {
+          // check if next one in original history was function
+          // but geminiHistory is what we pass. If it ends on model with calls, it's incomplete.
+          geminiHistory.pop();
+          continue;
+       }
+       break; // Ends on model text, OK
+    }
     geminiHistory.pop();
   }
 
