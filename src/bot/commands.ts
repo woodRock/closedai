@@ -136,6 +136,15 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     return true;
   }
 
+  if (cmd === '/restart') {
+    logInstruction(chatId, 'CMD', 'Executing /restart');
+    await safeSendMessage(chatId, "🔄 Restarting bot...");
+    setTimeout(() => {
+      process.exit(0);
+    }, 1000);
+    return true;
+  }
+
   if (cmd === '/help') {
     const response = `🤖 *ClosedAI Help*\n\n` +
       `/status - Show system status & disk usage\n` +
@@ -145,6 +154,7 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
       `/gitlog - Show last 5 git commits\n` +
       `/queue - Show queued tasks\n` +
       `/ping - Check if bot is alive\n` +
+      `/restart - Restart the bot process\n` +
       `/help - Show this message\n\n` +
       `Any other message will be processed by Gemini.`;
     await safeSendMessage(chatId, response);
