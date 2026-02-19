@@ -167,6 +167,7 @@ async function processOneMessage(userMessage: string, chatId: number, repoRoot: 
 
       for (const call of calls) {
         const { name, args } = call;
+        console.log(`   👉 Tool Call: ${name}(${JSON.stringify(args)})`);
         let content;
 
         try {
