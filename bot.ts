@@ -85,7 +85,7 @@ async function run() {
 
     bot.on('message', async (ctx) => {
       if (ctx.message && 'text' in ctx.message) {
-        processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);
+        await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);
       }
     });
 
@@ -117,11 +117,16 @@ async function run() {
     for (const update of updates) {
       if ('message' in update && update.message && 'text' in (update.message as any)) {
         const message = update.message as any;
-        await processOneMessage(message.text, message.chat.id, repoRoot);
+        try {
+          await processOneMessage(message.text, message.chat.id, repoRoot);
+        } catch (err) {
+          console.error("Error processing message:", err);
+        }
         lastUpdateId = update.update_id;
+        // Update immediately to avoid repeating on crash
+        await lastProcessedRef.set({ update_id: lastUpdateId });
       }
     }
-    await lastProcessedRef.set({ update_id: lastUpdateId });
     
     // Final heartbeat update
     await botStatusRef.set({ last_seen: new Date() }, { merge: true });

@@ -44,7 +44,7 @@ ${diff.substring(0, 10000)}`;
   }
 }
 
-async function getChatHistory(chatId: number, limit = 20) {
+async function getChatHistory(chatId: number, limit = 50) {
   const snapshot = await db.collection('history')
     .where('chatId', '==', chatId)
     .orderBy('timestamp', 'desc')
@@ -53,17 +53,19 @@ async function getChatHistory(chatId: number, limit = 20) {
 
   const docs = snapshot.docs.reverse();
   const history: any[] = [];
-  let lastRole = 'model';
 
   for (const doc of docs) {
     const data = doc.data();
     const role = data.role === 'model' ? 'model' : 'user';
-    if (role !== lastRole) {
-      history.push({
-        role,
-        parts: [{ text: data.text }]
-      });
-      lastRole = role;
+    const parts = data.parts || (data.text ? [{ text: data.text }] : []);
+    
+    if (parts.length === 0) continue;
+
+    if (history.length > 0 && history[history.length - 1].role === role) {
+      // Merge parts into the last entry to maintain alternating roles
+      history[history.length - 1].parts.push(...parts);
+    } else {
+      history.push({ role, parts });
     }
   }
 
@@ -78,12 +80,22 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     return;
   }
 
-  const pastHistory = await getChatHistory(chatId);
+  const history = await getChatHistory(chatId);
+  const geminiHistory = [...history];
+  
+  // To be used with startChat, history must start with 'user' role
+  while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
+    geminiHistory.shift();
+  }
+  // And it must end with 'model' role so the next message can be 'user'
+  while (geminiHistory.length > 0 && geminiHistory[geminiHistory.length - 1].role !== 'model') {
+    geminiHistory.pop();
+  }
 
   await db.collection('history').add({
     chatId,
     role: 'user',
-    text: userMessage,
+    parts: [{ text: userMessage }],
     timestamp: FieldValue.serverTimestamp()
   });
 
@@ -112,7 +124,7 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     history: [
       { role: "user", parts: [{ text: systemPrompt }] },
       { role: "model", parts: [{ text: "Ready." }] },
-      ...pastHistory
+      ...geminiHistory
     ],
   });
 
@@ -165,16 +177,23 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
       if (updateTimer) clearTimeout(updateTimer);
       await updateTelegram(true);
 
+      // Save model turn to history
+      const modelParts: any[] = [];
+      if (fullText) modelParts.push({ text: fullText });
+      for (const call of functionCalls) {
+        modelParts.push({ functionCall: call });
+      }
+
+      if (modelParts.length > 0) {
+        await db.collection('history').add({
+          chatId,
+          role: 'model',
+          parts: modelParts,
+          timestamp: FieldValue.serverTimestamp()
+        });
+      }
+
       if (functionCalls.length === 0) {
-        if (fullText) {
-          logInstruction(chatId, 'GEMINI', 'Final response sent.');
-          await db.collection('history').add({
-            chatId,
-            role: 'model',
-            text: fullText,
-            timestamp: FieldValue.serverTimestamp()
-          });
-        }
         break;
       }
 
@@ -187,6 +206,14 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
         functionResponses.push({ functionResponse: { name, response: content } });
       }
       
+      // Save tool responses to history
+      await db.collection('history').add({
+        chatId,
+        role: 'user',
+        parts: functionResponses,
+        timestamp: FieldValue.serverTimestamp()
+      });
+
       turn++;
       logInstruction(chatId, 'GEMINI', `Turn ${turn}/10 completed. Requesting next step...`);
       result = await chat.sendMessageStream(functionResponses);
@@ -210,9 +237,18 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     }
 
   } catch (error: any) {
-    // Error handling...
     logInstruction(chatId, 'ERROR', `Error: ${error.message}`);
-    await safeSendMessage(chatId, "❌ Error: " + error.message);
+    if ((error.status === 503 || error.message?.includes('503')) && !messageId) {
+      await db.collection('queue').add({
+        chatId,
+        userMessage,
+        status: 'pending',
+        createdAt: FieldValue.serverTimestamp()
+      });
+      await safeSendMessage(chatId, "⏳ Gemini is overloaded. Your request has been queued and will be retried automatically.");
+    } else {
+      await safeSendMessage(chatId, "❌ Error: " + error.message);
+    }
   }
 }
 

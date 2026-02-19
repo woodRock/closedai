@@ -22,8 +22,16 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
       const data = doc.data();
       const date = data.timestamp?.toDate().toLocaleTimeString() || 'unknown';
       const role = data.role === 'model' ? '🤖' : '👤';
-      const text = data.text.length > 30 ? data.text.substring(0, 30) + '...' : data.text;
-      response += `\`[${date}]\` ${role} **${data.chatId}**: ${text}\n`;
+      
+      let text = '';
+      if (data.text) {
+        text = data.text;
+      } else if (data.parts && Array.isArray(data.parts)) {
+        text = data.parts.map((p: any) => p.text || (p.functionCall ? `[Tool: ${p.functionCall.name}]` : p.functionResponse ? `[Result: ${p.functionResponse.name}]` : '')).join(' ');
+      }
+
+      const displayRef = text.length > 30 ? text.substring(0, 30) + '...' : text;
+      response += `\`[${date}]\` ${role} **${data.chatId}**: ${displayRef}\n`;
     });
     await safeSendMessage(chatId, response);
     return true;

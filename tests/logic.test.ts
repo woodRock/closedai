@@ -78,42 +78,48 @@ describe('Core Logic Integration Tests', () => {
 
   describe('processOneMessage - Gemini Interaction', () => {
     it('should process a simple message and call Gemini', async () => {
-      const mockSendMessage = vi.fn().mockResolvedValue({
-        response: {
-          functionCalls: () => [],
-          text: () => 'Hello from Gemini',
-        },
+      const mockSendMessageStream = vi.fn().mockResolvedValue({
+        stream: (async function* () {
+          yield {
+            functionCalls: () => [],
+            text: () => 'Hello from Gemini',
+          };
+        })(),
       });
 
       (model.startChat as any).mockReturnValue({
-        sendMessage: mockSendMessage,
+        sendMessageStream: mockSendMessageStream,
       });
 
       await processOneMessage('hello', 12345, '/tmp/repo');
 
       expect(db.collection).toHaveBeenCalledWith('history');
       expect(model.startChat).toHaveBeenCalled();
-      expect(mockSendMessage).toHaveBeenCalledWith('hello');
+      expect(mockSendMessageStream).toHaveBeenCalledWith('hello');
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'Hello from Gemini', expect.anything());
     });
 
     it('should handle tool calls (e.g., run_shell)', async () => {
-      const mockSendMessage = vi.fn()
+      const mockSendMessageStream = vi.fn()
         .mockResolvedValueOnce({
-          response: {
-            functionCalls: () => [{ name: 'run_shell', args: { command: 'ls' } }],
-            text: () => '',
-          },
+          stream: (async function* () {
+            yield {
+              functionCalls: () => [{ name: 'run_shell', args: { command: 'ls' } }],
+              text: () => '',
+            };
+          })(),
         })
         .mockResolvedValueOnce({
-          response: {
-            functionCalls: () => [],
-            text: () => 'Tool result processed',
-          },
+          stream: (async function* () {
+            yield {
+              functionCalls: () => [],
+              text: () => 'Tool result processed',
+            };
+          })(),
         });
 
       (model.startChat as any).mockReturnValue({
-        sendMessage: mockSendMessage,
+        sendMessageStream: mockSendMessageStream,
       });
 
       (execSync as any).mockImplementation((cmd: string) => {
@@ -123,7 +129,7 @@ describe('Core Logic Integration Tests', () => {
 
       await processOneMessage('list files', 12345, '/tmp/repo');
 
-      expect(mockSendMessage).toHaveBeenCalledTimes(2);
+      expect(mockSendMessageStream).toHaveBeenCalledTimes(2);
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'Tool result processed', expect.anything());
     });
 
@@ -132,14 +138,11 @@ describe('Core Logic Integration Tests', () => {
       error503.status = 503;
 
       (model.startChat as any).mockReturnValue({
-        sendMessage: vi.fn().mockRejectedValue(error503),
+        sendMessageStream: vi.fn().mockRejectedValue(error503),
       });
 
       await processOneMessage('important task', 12345, '/tmp/repo');
 
-      expect(db.collection).toHaveBeenCalledWith('queue');
-      // Should find the .add call for the queue
-      const queueCollection = (db.collection as any).mock.results.find((r: any) => r.value && r.value.add && (db.collection as any).mock.calls.some((c: any) => c[0] === 'queue'));
       expect(db.collection).toHaveBeenCalledWith('queue');
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, expect.stringContaining("queued"), expect.anything());
     });
@@ -166,10 +169,11 @@ describe('Core Logic Integration Tests', () => {
       const mockDocs = [
         { data: () => ({ timestamp: { toDate: () => new Date() }, text: 'msg1', chatId: 12345 }) },
       ];
-      (db.collection as any)().get.mockResolvedValueOnce({ empty: false, docs: mockDocs, reverse: () => mockDocs });
+      // 1st get (getChatHistory), 2nd get (handleSystemCommands)
+      (db.collection as any)().get.mockResolvedValue({ empty: false, docs: mockDocs, reverse: () => mockDocs });
 
       await processOneMessage('/log', 12345, '/tmp/repo');
-      expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, expect.stringContaining("Recent Commands"), expect.anything());
+      expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, expect.stringContaining("Recent Activity"), expect.anything());
     });
   });
 
@@ -192,15 +196,20 @@ describe('Core Logic Integration Tests', () => {
       });
 
       // Mock Gemini for the processed message
-      const mockSendMessage = vi.fn().mockResolvedValue({
-        response: { functionCalls: () => [], text: () => 'Retried successfully' },
+      const mockSendMessageStream = vi.fn().mockResolvedValue({
+        stream: (async function* () {
+          yield {
+            functionCalls: () => [],
+            text: () => 'Retried successfully'
+          };
+        })(),
       });
-      (model.startChat as any).mockReturnValue({ sendMessage: mockSendMessage });
+      (model.startChat as any).mockReturnValue({ sendMessageStream: mockSendMessageStream });
 
       await checkQueue('/tmp/repo');
 
       expect(mockDoc.ref.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'processing' }));
-      expect(mockSendMessage).toHaveBeenCalledWith('retry me');
+      expect(mockSendMessageStream).toHaveBeenCalledWith('retry me');
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'Retried successfully', expect.anything());
     });
   });
