@@ -86,17 +86,6 @@ export const toolDefinitions = [
           },
           required: ["command"]
         }
-      },
-      {
-        name: "reply",
-        description: "Send a message back to the user in Telegram. Use this to provide progress updates, ask questions, or give a final summary.",
-        parameters: {
-          type: SchemaType.OBJECT,
-          properties: {
-            text: { type: SchemaType.STRING, description: "The message text." }
-          },
-          required: ["text"]
-        }
       }
     ]
   }
@@ -243,11 +232,6 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       }
       content = { result: execSync(cmd, { cwd: activeRoot }).toString() };
       logInstruction(chatId, 'SHELL', cmd);
-    } else if (normalizedName === "reply") {
-      const txt = args.text;
-      await safeSendMessage(chatId, txt);
-      content = { result: "Sent." };
-      logInstruction(chatId, 'REPLY', txt.substring(0, 30) + '...');
     } else {
       content = { error: `Unknown tool: ${name}` };
       logInstruction(chatId, 'ERROR', `Model tried to call unknown tool: ${name}`);

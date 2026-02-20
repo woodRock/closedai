@@ -177,6 +177,7 @@ CRITICAL RULES:
 3. EFFICIENCY: Complete the task in 10 actions or less.
 4. IDENTITY: Do not search for your own name or model version unless specifically asked.
 5. NO REPETITION: If a tool call has already been made with specific arguments and succeeded, do not repeat it unless the outcome needs to be different.
+6. COMMUNICATION: Speak directly to the user. Do not use a "reply" tool; just output your text response. If you have already provided a final summary in a previous turn, do not repeat it.
 
 Ready to assist.`;
 
