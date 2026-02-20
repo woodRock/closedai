@@ -23,14 +23,19 @@ const DocsPage: React.FC = () => {
   const workflowCode = `name: ClosedAI Agent
 on:
   schedule:
-    - cron: '*/5 * * * *' # Runs every 5 minutes
-  workflow_dispatch:      # Allows manual triggering
+    - cron: '*/5 * * * *' # Check for messages every 5 minutes
+  workflow_dispatch:      # Allow manual trigger
+
+permissions:
+  contents: write         # Required for the bot to push code changes
 
 jobs:
   run-bot:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Run ClosedAI
         uses: woodRock/closedai@main
         with:
@@ -110,23 +115,26 @@ jobs:
       <section id="prerequisites" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['mx-auto']}`}>
           <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-center']} ${styles['text-white']}`}>Prerequisites</h2>
-          <p className={`${styles['text-center']} ${styles['text-gray-400']} ${styles['mb-12']}`}>Before you deploy, make sure you have the following credentials ready.</p>
+          <p className={`${styles['text-center']} ${styles['text-gray-400']} ${styles['mb-12']}`}>Follow these steps to gather your credentials.</p>
           <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-8']}`}>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
               <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>1. Telegram Bot Token</h3>
-              <p className={styles['text-gray-400']}>Message <a href="https://t.me/botfather" className={styles['text-blue-400']}>@BotFather</a> on Telegram to create a new bot and get your API token.</p>
+              <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Message <a href="https://t.me/botfather" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>@BotFather</a> to create a bot and get your token.</p>
+              <p className={styles['text-gray-500']} style={{ fontSize: '0.875rem' }}>Also find your ID via <a href="https://t.me/userinfobot" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>@userinfobot</a>.</p>
             </div>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
               <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>2. Gemini API Key</h3>
-              <p className={styles['text-gray-400']}>Get a free API key for Gemini 1.5 Flash from <a href="https://aistudio.google.com/" className={styles['text-blue-400']}>Google AI Studio</a>.</p>
+              <p className={styles['text-gray-400']}>Get a free API key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Google AI Studio</a>. ClosedAI uses Gemini 1.5 Flash for high efficiency.</p>
             </div>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
-              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>3. Firebase Service Account</h3>
-              <p className={styles['text-gray-400']}>Create a Firebase project, go to Project Settings {'>'} Service Accounts, and generate a new private key (JSON).</p>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>3. Firebase Setup</h3>
+              <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>1. Go to <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Firebase Console</a> and create a project.</p>
+              <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>2. Enable <b>Firestore Database</b>.</p>
+              <p className={`${styles['text-gray-400']}`}>3. Go to <b>Project Settings {'>'} Service Accounts</b> and click "Generate new private key".</p>
             </div>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
-              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>4. Authorized User IDs</h3>
-              <p className={styles['text-gray-400']}>Find your Telegram User ID using <a href="https://t.me/userinfobot" className={styles['text-blue-400']}>@userinfobot</a> to ensure only you can control the agent.</p>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>4. GitHub Permissions</h3>
+              <p className={styles['text-gray-400']}>In your repo, go to <b>Settings {'>'} Actions {'>'} General</b>. Under "Workflow permissions", select <b>"Read and write permissions"</b> and save.</p>
             </div>
           </div>
         </div>
@@ -135,13 +143,13 @@ jobs:
       {/* Setup Guide */}
       <section id="setup" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['mx-auto']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>How to Setup</h2>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Deployment</h2>
           <div className={styles['space-y-12']}>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>1</div>
               <div className={styles['w-full']}>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add GitHub Secrets</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Navigate to your repo <b>Settings {'>'} Secrets and variables {'>'} Actions</b> and add:</p>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Go to <b>Settings {'>'} Secrets and variables {'>'} Actions</b> and add these secrets:</p>
                 <div className={styles['table-container']}>
                   <table>
                     <thead>
@@ -161,11 +169,11 @@ jobs:
                       </tr>
                       <tr>
                         <td><code>FIREBASE_SERVICE_ACCOUNT</code></td>
-                        <td>Full content of the service account JSON</td>
+                        <td>Full content of the service account JSON file</td>
                       </tr>
                       <tr>
                         <td><code>ALLOWED_TELEGRAM_USER_IDS</code></td>
-                        <td>Comma-separated IDs (e.g., 12345678)</td>
+                        <td>Your ID from @userinfobot</td>
                       </tr>
                     </tbody>
                   </table>
@@ -176,7 +184,7 @@ jobs:
               <div className={styles['step-number']}>2</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Workflow File</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository:</p>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository with this content:</p>
                 <pre className={styles['code-block']}>
                   {workflowCode}
                 </pre>
@@ -186,7 +194,7 @@ jobs:
               <div className={styles['step-number']}>3</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Start Chatting</h4>
-                <p className={`${styles['text-gray-400']}`}>Once the action runs (or you trigger it manually), open your Telegram bot and send a message like <code>"Hello, what can you do?"</code>.</p>
+                <p className={`${styles['text-gray-400']}`}>Once you push the file, the action will run every 5 minutes. You can also trigger it manually from the <b>Actions</b> tab. Send <code>"Hello"</code> to your bot to begin!</p>
               </div>
             </div>
           </div>
