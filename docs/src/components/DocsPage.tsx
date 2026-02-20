@@ -194,61 +194,42 @@ const DocsPage: React.FC = () => {
       {/* Setup */}
       <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup</h2>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup (GitHub Action)</h2>
           <div className={styles['space-y-8']}>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>1</div>
               <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Fork the Repository</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Start by creating your own copy of the ClosedAI repository.</p>
-                <a href="https://github.com/woodRock/closedai/fork" target="_blank" rel="noopener noreferrer" className={styles['btn-secondary']} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
-                   Fork Repository
-                </a>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add Workflow File</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository.</p>
+                <div className={styles['code-block']}>
+                  name: ClosedAI<br/>
+                  on:<br/>
+                  &nbsp;&nbsp;schedule: [{cron: '*/5 * * * *'}]<br/>
+                  jobs:<br/>
+                  &nbsp;&nbsp;run-bot:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;steps:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: woodRock/closedai@main<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: ${'{'}{ secrets.TELEGRAM_BOT_TOKEN }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: ${'{'}{ secrets.GEMINI_API_KEY }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: ${'{'}{ secrets.FIREBASE_SERVICE_ACCOUNT }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: ${'{'}{ secrets.ALLOWED_TELEGRAM_USER_IDS }{'}'}
+                </div>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>2</div>
               <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Telegram Bot</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Message <a href="https://t.me/botfather" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>@BotFather</a> on Telegram and follow the instructions to create a new bot and get your API token.</p>
-              </div>
-            </div>
-            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>3</div>
-              <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Get Gemini Key</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Generate an API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Google AI Studio</a>.</p>
-              </div>
-            </div>
-            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>4</div>
-              <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Setup Firebase</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>
-                  1. Create a new project in the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Firebase Console</a>.<br/>
-                  2. In the project settings, navigate to <span className={styles['text-white']}>Service Accounts</span>.<br/>
-                  3. Click <span className={styles['text-white']}>Generate new private key</span>.<br/>
-                  4. Save the JSON file; you'll need its contents for the <code>FIREBASE_SERVICE_ACCOUNT</code> secret.
-                </p>
-              </div>
-            </div>
-            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>5</div>
-              <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
-                <p className={styles['text-gray-400']}>Add tokens to your GitHub Repository Secrets. Use the setup script to help you gather the necessary IDs:</p>
-                <div className={styles['code-block']}>
-                  git clone https://github.com/YOUR_USERNAME/closedai.git<br/>
-                  cd closedai<br/>
-                  npm install<br/>
-                  npm run setup
-                </div>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Add your <code>TELEGRAM_BOT_TOKEN</code>, <code>GEMINI_API_KEY</code>, <code>FIREBASE_SERVICE_ACCOUNT</code>, and <code>ALLOWED_TELEGRAM_USER_IDS</code> to your GitHub Repository Secrets.</p>
               </div>
             </div>
           </div>
           <div className={`${styles['mt-12']} ${styles['text-center']}`}>
-            <a href="https://github.com/woodRock/closedai#setup" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
-              View Full Guide
+            <a href="https://github.com/woodRock/closedai#quick-start-use-as-a-github-action" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+              View Full Setup Guide
             </a>
           </div>
         </div>
