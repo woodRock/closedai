@@ -25,18 +25,15 @@ jobs:
           node-version: '20'
 
       - name: Install Dependencies (React App)
-        run: cd hello-world-react && npm install
+        run: cd docs && npm install
 
       - name: Build React App
-        run: cd hello-world-react && npm run build
-
-      - name: Move Build Output to Docs folder
-        run: mkdir -p docs && cp -r hello-world-react/dist/* docs/
+        run: cd docs && npm run build
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs
+          path: docs/dist
 
       - name: Deploy to GitHub Pages
         id: deployment
