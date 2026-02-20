@@ -34,10 +34,10 @@ const DocsPage: React.FC = () => {
             <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
           </div>
           <div className={`${styles.md_flex} ${styles.hidden} ${styles['items-center']} ${styles['space-x-8']} ${styles['text-sm']} ${styles['font-medium']}`}>
+            <a href="#setup" className={styles['text-gray-400']}>Setup</a>
             <a href="#features" className={styles['text-gray-400']}>Features</a>
             <a href="#capabilities" className={styles['text-gray-400']}>Capabilities</a>
             <a href="#config" className={styles['text-gray-400']}>Config</a>
-            <a href="#setup" className={styles['text-gray-400']}>Setup</a>
             <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-github']}>Star on GitHub</a>
           </div>
         </div>
@@ -58,7 +58,7 @@ const DocsPage: React.FC = () => {
           </p>
           <div className={`${styles.flex} ${styles['justify-center']} ${styles['gap-6']} ${styles['mb-24']}`}>
             <a href="#setup" className={styles['btn-primary']}>
-              Deploy Now
+              Get Started
             </a>
             <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-secondary']}>
               View Source
@@ -82,6 +82,50 @@ const DocsPage: React.FC = () => {
                 <div className={`${styles['text-green-400']} ${styles['mt-4']}`}>Successfully updated src/main.tsx</div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Setup (MOVED TO TOP) */}
+      <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup (GitHub Action)</h2>
+          <div className={styles['space-y-8']}>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>1</div>
+              <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add Workflow File</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository.</p>
+                <div className={styles['code-block']}>
+                  name: ClosedAI<br/>
+                  on:<br/>
+                  &nbsp;&nbsp;schedule: [{cron: '*/5 * * * *'}]<br/>
+                  jobs:<br/>
+                  &nbsp;&nbsp;run-bot:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;steps:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: woodRock/closedai@main<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: ${'{'}{ secrets.TELEGRAM_BOT_TOKEN }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: ${'{'}{ secrets.GEMINI_API_KEY }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: ${'{'}{ secrets.FIREBASE_SERVICE_ACCOUNT }{'}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: ${'{'}{ secrets.ALLOWED_TELEGRAM_USER_IDS }{'}'}
+                </div>
+              </div>
+            </div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>2</div>
+              <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Add your <code>TELEGRAM_BOT_TOKEN</code>, <code>GEMINI_API_KEY</code>, <code>FIREBASE_SERVICE_ACCOUNT</code>, and <code>ALLOWED_TELEGRAM_USER_IDS</code> to your GitHub Repository Secrets.</p>
+              </div>
+            </div>
+          </div>
+          <div className={`${styles['mt-12']} ${styles['text-center']}`}>
+            <a href="https://github.com/woodRock/closedai#quick-start-use-as-a-github-action" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+              View Full Setup Guide
+            </a>
           </div>
         </div>
       </section>
@@ -187,50 +231,6 @@ const DocsPage: React.FC = () => {
                 </tr>
               </tbody>
             </table>
-          </div>
-        </div>
-      </section>
-
-      {/* Setup */}
-      <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
-        <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup (GitHub Action)</h2>
-          <div className={styles['space-y-8']}>
-            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>1</div>
-              <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add Workflow File</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository.</p>
-                <div className={styles['code-block']}>
-                  name: ClosedAI<br/>
-                  on:<br/>
-                  &nbsp;&nbsp;schedule: [{cron: '*/5 * * * *'}]<br/>
-                  jobs:<br/>
-                  &nbsp;&nbsp;run-bot:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;steps:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: woodRock/closedai@main<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: ${'{'}{ secrets.TELEGRAM_BOT_TOKEN }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: ${'{'}{ secrets.GEMINI_API_KEY }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: ${'{'}{ secrets.FIREBASE_SERVICE_ACCOUNT }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: ${'{'}{ secrets.ALLOWED_TELEGRAM_USER_IDS }{'}'}
-                </div>
-              </div>
-            </div>
-            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>2</div>
-              <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Add your <code>TELEGRAM_BOT_TOKEN</code>, <code>GEMINI_API_KEY</code>, <code>FIREBASE_SERVICE_ACCOUNT</code>, and <code>ALLOWED_TELEGRAM_USER_IDS</code> to your GitHub Repository Secrets.</p>
-              </div>
-            </div>
-          </div>
-          <div className={`${styles['mt-12']} ${styles['text-center']}`}>
-            <a href="https://github.com/woodRock/closedai#quick-start-use-as-a-github-action" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
-              View Full Setup Guide
-            </a>
           </div>
         </div>
       </section>
