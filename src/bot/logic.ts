@@ -71,7 +71,15 @@ async function getChatHistory(chatId: number, limit = 20) {
       role = 'user';
     }
     
-    history.push({ role, parts });
+    // Ensure we don't send unsupported MIME types in history
+    const sanitizedParts = parts.map((p: any) => {
+      if (p.inlineData && p.inlineData.mimeType === 'application/octet-stream') {
+        return { ...p, inlineData: { ...p.inlineData, mimeType: 'image/jpeg' } };
+      }
+      return p;
+    });
+    
+    history.push({ role, parts: sanitizedParts });
   }
 
   return history;
@@ -119,10 +127,15 @@ export async function processOneMessage(
 
   const userParts: any[] = [{ text: userMessage || (image ? "Explain this image." : "") }];
   if (image) {
+    let finalMimeType = image.mimeType;
+    if (finalMimeType === 'application/octet-stream') {
+      finalMimeType = 'image/jpeg';
+    }
+
     userParts.push({
       inlineData: {
         data: image.data,
-        mimeType: image.mimeType
+        mimeType: finalMimeType
       }
     });
   }
@@ -171,7 +184,15 @@ Ready to assist.`;
     { role: "user", parts: [{ text: "Initialize system." }] },
     { role: "model", parts: [{ text: systemPrompt }] },
     ...geminiHistory
-  ];
+  ].map(turn => ({
+    ...turn,
+    parts: turn.parts.map((p: any) => {
+      if (p.inlineData && p.inlineData.mimeType === 'application/octet-stream') {
+        return { ...p, inlineData: { ...p.inlineData, mimeType: 'image/jpeg' } };
+      }
+      return p;
+    })
+  }));
 
   currentHistory.push({ role: 'user', parts: userParts });
 
