@@ -86,10 +86,10 @@ const DocsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Setup (MOVED TO TOP) */}
+      {/* Setup */}
       <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup (GitHub Action)</h2>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>GitHub Marketplace Setup</h2>
           <div className={styles['space-y-8']}>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>1</div>
@@ -97,15 +97,21 @@ const DocsPage: React.FC = () => {
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add Workflow File</h4>
                 <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository.</p>
                 <div className={styles['code-block']}>
-                  name: ClosedAI<br/>
+                  name: ClosedAI Agent<br/>
                   on:<br/>
-                  &nbsp;&nbsp;schedule: [{cron: '*/5 * * * *'}]<br/>
+                  &nbsp;&nbsp;schedule:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;- cron: '*/5 * * * *'<br/>
+                  &nbsp;&nbsp;workflow_dispatch:<br/>
+                  <br/>
                   jobs:<br/>
                   &nbsp;&nbsp;run-bot:<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;steps:<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: woodRock/closedai@main<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fetch-depth: 0<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: Run ClosedAI<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uses: woodRock/closedai@main<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: ${'{'}{ secrets.TELEGRAM_BOT_TOKEN }{'}'}<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: ${'{'}{ secrets.GEMINI_API_KEY }{'}'}<br/>
@@ -123,7 +129,7 @@ const DocsPage: React.FC = () => {
             </div>
           </div>
           <div className={`${styles['mt-12']} ${styles['text-center']}`}>
-            <a href="https://github.com/woodRock/closedai#quick-start-use-as-a-github-action" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+            <a href="https://github.com/woodRock/closedai#github-marketplace-setup" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
               View Full Setup Guide
             </a>
           </div>
@@ -155,82 +161,6 @@ const DocsPage: React.FC = () => {
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Sandboxed</h3>
               <p className={styles['text-gray-400']}>Isolated environment for every task. Your main environment stays clean and safe.</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Capabilities */}
-      <section id="capabilities" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
-        <div className={styles['max-w-7xl']}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>Tool Capabilities</h2>
-          <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-8']}`}>
-            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>File Operations</h4>
-              <ul className={`${styles['space-y-2']} ${styles['text-gray-400']}`}>
-                <li><code>read_file</code>: Read file contents</li>
-                <li><code>write_file</code>: Create or overwrite files</li>
-                <li><code>list_directory</code>: Explore repo structure</li>
-                <li><code>delete_file</code>: Remove files</li>
-                <li><code>move_file</code>: Rename or move files</li>
-              </ul>
-            </div>
-            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>System & Communication</h4>
-              <ul className={`${styles['space-y-2']} ${styles['text-gray-400']}`}>
-                <li><code>run_shell</code>: Execute arbitrary shell commands</li>
-                <li><code>search_repo</code>: Recursive grep search</li>
-              </ul>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Configuration */}
-      <section id="config" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
-        <div className={styles['max-w-7xl']}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>Environment Configuration</h2>
-          <div className={styles['table-container']}>
-            <table>
-              <thead>
-                <tr>
-                  <th>Variable</th>
-                  <th>Description</th>
-                  <th>Required</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td><code>TELEGRAM_BOT_TOKEN</code></td>
-                  <td>Token from @BotFather</td>
-                  <td>Yes</td>
-                </tr>
-                <tr>
-                  <td><code>GEMINI_API_KEY</code></td>
-                  <td>API Key from Google AI Studio</td>
-                  <td>Yes</td>
-                </tr>
-                <tr>
-                  <td><code>FIREBASE_SERVICE_ACCOUNT</code></td>
-                  <td>JSON string of your Firebase Service Account key</td>
-                  <td>Yes</td>
-                </tr>
-                <tr>
-                  <td><code>ALLOWED_TELEGRAM_USER_IDS</code></td>
-                  <td>Comma-separated list of authorized IDs</td>
-                  <td>Yes</td>
-                </tr>
-                <tr>
-                  <td><code>WORKSPACE_DIR</code></td>
-                  <td>Path to the repository to manage</td>
-                  <td>No (defaults to .)</td>
-                </tr>
-                <tr>
-                  <td><code>UNSAFE_MODE</code></td>
-                  <td>Set to <code>true</code> to bypass file/command filters</td>
-                  <td>No</td>
-                </tr>
-              </tbody>
-            </table>
           </div>
         </div>
       </section>

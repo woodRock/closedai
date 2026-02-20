@@ -9,12 +9,9 @@
 
 ---
 
-## ⚡ Quick Start: Use as a GitHub Action
+## 🚀 GitHub Marketplace Setup
 
-You can add ClosedAI to **any** existing repository by adding a simple workflow file.
-
-### 1. Create a Workflow File
-In your repository, create `.github/workflows/closedai.yml`:
+To use ClosedAI in your repository, create a workflow file at `.github/workflows/closedai.yml` with the following content:
 
 ```yaml
 name: ClosedAI Agent
@@ -39,12 +36,12 @@ jobs:
           allowed_user_ids: ${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}
 ```
 
-### 2. Configure Secrets
+### Required Secrets
 Go to **Settings > Secrets and variables > Actions** and add:
-- `TELEGRAM_BOT_TOKEN`: From [@BotFather](https://t.me/botfather).
-- `GEMINI_API_KEY`: From [Google AI Studio](https://aistudio.google.com/).
-- `FIREBASE_SERVICE_ACCOUNT`: The JSON key from your Firebase project.
-- `ALLOWED_TELEGRAM_USER_IDS`: Your Telegram ID (get it from [@userinfobot](https://t.me/userinfobot)).
+1.  `TELEGRAM_BOT_TOKEN`: Your bot token from [@BotFather](https://t.me/botfather).
+2.  `GEMINI_API_KEY`: Your API key from [Google AI Studio](https://aistudio.google.com/).
+3.  `FIREBASE_SERVICE_ACCOUNT`: The full JSON key for your Firebase Service Account.
+4.  `ALLOWED_TELEGRAM_USER_IDS`: A comma-separated list of your Telegram User IDs (get yours from [@userinfobot](https://t.me/userinfobot)).
 
 ---
 
@@ -58,21 +55,10 @@ Go to **Settings > Secrets and variables > Actions** and add:
 
 ---
 
-## 🚀 Manual Installation (Self-Hosted)
+## ⚡ Manual Installation (Self-Hosted)
 
-If you want to host the bot yourself for instant responses:
+If you want the bot to respond **instantly** instead of waiting for the GitHub Action cron, you can run it on your own hardware:
 
-### 1. The Telegram Bot
-1.  Message [@BotFather](https://t.me/botfather) on Telegram.
-2.  Run `/newbot` and follow the prompts to get your **Bot Token**.
-
-### 2. The Firebase Database
-1.  Create a new project in the [Firebase Console](https://console.firebase.google.com/).
-2.  Navigate to **Firestore Database** and click **Create Database** (Start in production mode).
-3.  Go to **Project Settings** > **Service accounts**.
-4.  Click **Generate new private key** and download the JSON file.
-
-### 3. Setup Locally
 1.  **Clone the repo**:
     ```bash
     git clone https://github.com/woodrock/closedai.git
@@ -88,22 +74,11 @@ If you want to host the bot yourself for instant responses:
 
 ## 🛡 Security & Sandboxing
 
-ClosedAI is designed to be safe even when self-hosted:
+ClosedAI is designed to be safe:
 
 - **Path Restriction**: The bot cannot read or write files outside the repository root.
-- **Forbidden Files**: Access to sensitive files like `.env`, `firebase-key.json`, and `.git/` is blocked by default.
-- **Shell Filtering**: Dangerous commands (e.g., `rm -rf /`, fork bombs, or environment variable leaks) are automatically blocked.
-- **Workspace Isolation**: You can set a `WORKSPACE_DIR` environment variable to restrict the bot's operations to a specific sub-folder.
-
----
-
-## 🐳 Docker Deployment
-
-1.  **Run setup**: Create your `.env` by running `npm run setup`.
-2.  **Start**:
-    ```bash
-    docker-compose up -d --build
-    ```
+- **Forbidden Files**: Access to sensitive files like `.env`, `firebase-key.json`, and `.git/` is blocked.
+- **Shell Filtering**: Dangerous commands (e.g., `rm -rf /`) are automatically blocked.
 
 ---
 Built with ❤️ by [woodrock](https://github.com/woodrock).
