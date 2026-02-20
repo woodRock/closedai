@@ -39,6 +39,14 @@ jobs:
           allowed_user_ids: ${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}
 ```
 
+### ⚠️ Essential Step: Enable Write Permissions
+By default, GitHub Actions are restricted to read-only access. To allow the bot to commit and push code changes:
+1.  Go to your repository **Settings**.
+2.  Navigate to **Actions > General** in the sidebar.
+3.  Scroll down to **Workflow permissions**.
+4.  Select **Read and write permissions**.
+5.  Click **Save**.
+
 ### Required Secrets
 Go to **Settings > Secrets and variables > Actions** and add:
 1.  `TELEGRAM_BOT_TOKEN`: Your bot token from [@BotFather](https://t.me/botfather).
