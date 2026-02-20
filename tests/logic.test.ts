@@ -101,6 +101,38 @@ describe('Core Logic Integration Tests', () => {
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'Hello from Gemini', expect.anything());
     });
 
+    it('should process an image message and call Gemini', async () => {
+      const mockGenerateContentStream = vi.fn().mockResolvedValue({
+        stream: (async function* () {
+          yield {
+            candidates: [{ content: { parts: [{ text: 'I see an image' }] } }],
+            text: () => 'I see an image',
+          };
+        })(),
+        response: Promise.resolve({
+          candidates: [{ content: { parts: [{ text: 'I see an image' }] } }],
+          functionCalls: () => [],
+        }),
+      });
+
+      (model.generateContentStream as any).mockImplementation(mockGenerateContentStream);
+
+      const mockImage = { data: 'base64data', mimeType: 'image/jpeg' };
+      await processOneMessage('what is this?', 12345, '/tmp/repo', undefined, mockImage);
+
+      expect(model.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+        contents: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            parts: expect.arrayContaining([
+              expect.objectContaining({ inlineData: { data: 'base64data', mimeType: 'image/jpeg' } })
+            ])
+          })
+        ])
+      }));
+      expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'I see an image', expect.anything());
+    });
+
     it('should handle tool calls (e.g., run_shell)', async () => {
       const mockGenerateContentStream = vi.fn()
         .mockResolvedValueOnce({

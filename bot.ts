@@ -30,9 +30,21 @@ async function downloadImage(fileId: string) {
     const link = await bot.telegram.getFileLink(fileId);
     const response = await fetch(link.href);
     const buffer = await response.arrayBuffer();
+    
+    let mimeType = response.headers.get('content-type') || 'image/jpeg';
+    
+    // If the server returns a generic octet-stream, try to guess from extension or default to jpeg
+    if (mimeType === 'application/octet-stream') {
+      const ext = path.extname(link.pathname).toLowerCase();
+      if (ext === '.png') mimeType = 'image/png';
+      else if (ext === '.webp') mimeType = 'image/webp';
+      else if (ext === '.gif') mimeType = 'image/gif';
+      else mimeType = 'image/jpeg';
+    }
+
     return {
       data: Buffer.from(buffer).toString('base64'),
-      mimeType: response.headers.get('content-type') || 'image/jpeg'
+      mimeType
     };
   } catch (e) {
     console.error("Failed to download image:", e);
@@ -106,6 +118,8 @@ async function run() {
       if (msg.photo) {
         const photo = msg.photo[msg.photo.length - 1];
         image = await downloadImage(photo.file_id);
+      } else if (msg.document && msg.document.mime_type?.startsWith('image/')) {
+        image = await downloadImage(msg.document.file_id);
       }
 
       if (text || image) {
@@ -147,6 +161,8 @@ async function run() {
         if (message.photo) {
           const photo = message.photo[message.photo.length - 1];
           image = await downloadImage(photo.file_id);
+        } else if (message.document && message.document.mime_type?.startsWith('image/')) {
+          image = await downloadImage(message.document.file_id);
         }
 
         if (text || image) {
