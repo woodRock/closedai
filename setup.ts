@@ -44,7 +44,7 @@ async function main() {
 
   try {
     const genAI = new GoogleGenerativeAI(geminiKey);
-    const model = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     progressBar.update(50);
     await model.generateContent("ping");
     progressBar.update(100);
@@ -53,7 +53,6 @@ async function main() {
   } catch (e: any) {
     progressBar.stop();
     console.error(pc.red("❌ Gemini API Key: invalid: " + e.message));
-    console.log(pc.yellow("Hint: Make sure your API key has access to Gemini 3 Flash in AI Studio."));
     process.exit(1);
   }
 
@@ -79,10 +78,7 @@ async function main() {
   } catch (e: any) {
     telegramProgress.stop();
     console.error(pc.red("❌ Telegram Validation Failed: " + e.message));
-    const skip = await question("❓ Validation failed. Do you want to skip validation and use this token anyway? (y/n): ");
-    if (skip.toLowerCase() !== 'y') {
-      process.exit(1);
-    }
+    process.exit(1);
   }
 
   // 3. Security Check
@@ -90,22 +86,7 @@ async function main() {
 
   // 4. Firebase Setup
   console.log(pc.bold("\n🔥 Firebase Configuration"));
-  let firebasePath = "";
-  let serviceAccountContent = "";
-  let projectId = "";
-
-  const autoFirebase = (await question("Do you want to use Firebase CLI to automate index deployment? (y/n): ")).toLowerCase() === 'y';
-  
-  if (autoFirebase) {
-    try {
-      execSync('firebase --version', { stdio: 'ignore' });
-    } catch (e) {
-      console.log(pc.yellow("Firebase CLI not found. Please install it with 'npm install -g firebase-tools' and run 'firebase login'."));
-      process.exit(1);
-    }
-  }
-
-  firebasePath = (await question("📂 Path to Firebase Service Account JSON: ")).trim();
+  const firebasePath = (await question("📂 Path to Firebase Service Account JSON: ")).trim();
 
   const firebaseProgress = new cliProgress.SingleBar({
     format: pc.cyan('Validating Firebase |') + pc.blue('{bar}') + '| {percentage}%',
@@ -115,14 +96,19 @@ async function main() {
   });
   firebaseProgress.start(100, 0);
 
+  let serviceAccountContent = "";
+  let projectId = "";
+
   try {
     const fullPath = path.resolve(firebasePath);
     serviceAccountContent = fs.readFileSync(fullPath, 'utf-8');
     const serviceAccount = JSON.parse(serviceAccountContent);
     projectId = serviceAccount.project_id;
+    
     firebaseProgress.update(30);
     const app = initializeApp({ credential: cert(serviceAccount) }, "setup");
     const db = getFirestore(app);
+    
     firebaseProgress.update(70);
     await db.collection('config').doc('test').set({ setup_at: new Date() });
     firebaseProgress.update(100);
@@ -134,50 +120,39 @@ async function main() {
     process.exit(1);
   }
 
-  if (autoFirebase) {
-    console.log(pc.bold("🚀 Deploying Firestore Indexes..."));
-    try {
-      execSync(`firebase use ${projectId} --add default`, { stdio: 'inherit' });
-      execSync('firebase deploy --only firestore:indexes', { stdio: 'inherit' });
-      console.log(pc.green("✅ Firestore Indexes: deployed.\n"));
-    } catch (e: any) {
-      console.error(pc.red("❌ Failed to deploy indexes: " + e.message));
-      console.log(pc.yellow("You may need to run 'firebase login' or ensure Firestore is enabled in the console."));
-    }
+  // Automated Index Deployment
+  console.log(pc.bold("🚀 Deploying Firestore Indexes via CLI..."));
+  try {
+    // Write temporary file for CLI
+    const tempSaPath = '.temp-sa.json';
+    fs.writeFileSync(tempSaPath, serviceAccountContent);
+    
+    process.env.GOOGLE_APPLICATION_CREDENTIALS = tempSaPath;
+    execSync(`npx firebase deploy --only firestore:indexes --project ${projectId}`, { stdio: 'inherit' });
+    
+    fs.unlinkSync(tempSaPath);
+    console.log(pc.green("✅ Firestore Indexes: deployed.\n"));
+  } catch (e: any) {
+    console.error(pc.red("❌ Failed to deploy indexes: " + e.message));
+    console.log(pc.yellow("This is normal if the project was just created. They will be deployed on the first GitHub Action run."));
   }
 
   // 5. Automated GitHub Secret Setup
   console.log(pc.bold("🚀 Setting up GitHub Secrets..."));
-  const secretProgress = new cliProgress.SingleBar({
-    format: pc.cyan('Configuring GitHub |') + pc.blue('{bar}') + '| {percentage}% | {task}',
-    barCompleteChar: '\u2588',
-    barIncompleteChar: '\u2591',
-    hideCursor: true
-  });
+  const secrets = [
+    { name: "GEMINI_API_KEY", value: geminiKey },
+    { name: "TELEGRAM_BOT_TOKEN", value: telegramToken },
+    { name: "FIREBASE_SERVICE_ACCOUNT", value: serviceAccountContent },
+    { name: "ALLOWED_TELEGRAM_USER_IDS", value: allowedIds }
+  ];
 
-  try {
-    const secrets = [
-      { name: "GEMINI_API_KEY", value: geminiKey },
-      { name: "TELEGRAM_BOT_TOKEN", value: telegramToken },
-      { name: "FIREBASE_SERVICE_ACCOUNT", value: serviceAccountContent },
-      { name: "ALLOWED_TELEGRAM_USER_IDS", value: allowedIds }
-    ];
-
-    secretProgress.start(secrets.length, 0, { task: 'Initializing' });
-    for (let i = 0; i < secrets.length; i++) {
-      const secret = secrets[i];
-      if (secret.value) {
-        secretProgress.update(i, { task: secret.name });
-        execSync(`gh secret set ${secret.name}`, { input: secret.value });
-      }
+  for (const secret of secrets) {
+    if (secret.value) {
+      console.log(pc.cyan(`   Setting ${secret.name}...`));
+      execSync(`gh secret set ${secret.name}`, { input: secret.value });
     }
-    secretProgress.update(secrets.length, { task: 'Complete' });
-    secretProgress.stop();
-    console.log(pc.green("\n✅ GitHub Secrets: configured successfully.\n"));
-  } catch (e: any) {
-    secretProgress.stop();
-    console.error(pc.red("❌ Error setting GitHub Secrets: " + e.message));
   }
+  console.log(pc.green("✅ GitHub Secrets: configured.\n"));
 
   // 6. Generate .env
   const envContent = `TELEGRAM_BOT_TOKEN="${telegramToken}"

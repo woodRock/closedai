@@ -9,12 +9,29 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required for the bot to push changes back
+      contents: write
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Deploy Firestore Indexes
+        run: |
+          echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > service-account.json
+          export GOOGLE_APPLICATION_CREDENTIALS=service-account.json
+          PROJECT_ID=$(node -e "console.log(JSON.parse(process.argv[1]).project_id)" '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}')
+          npx firebase deploy --only firestore:indexes --project $PROJECT_ID
+        continue-on-error: true # Don't stop if indexes are already up to date or project isn't fully ready
 
       - name: Run ClosedAI Action
         uses: woodRock/closedai@main
