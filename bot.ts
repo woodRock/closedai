@@ -2,6 +2,7 @@ import pc from 'picocolors';
 import 'dotenv/config';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import { printHeader, logInstruction } from './src/utils/logger.js';
 import { db } from './src/services/firebase.js';
 import { bot } from './src/bot/instance.js';
@@ -56,6 +57,11 @@ async function run() {
   const isPolling = process.argv.includes('--poll');
   // Use WORKSPACE_DIR if provided (e.g., in GitHub Actions), otherwise use current directory
   const repoRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : process.cwd();
+
+  // Ensure git treats the workspace as safe (required for GitHub Actions)
+  try {
+    execSync(`git config --global --add safe.directory "${repoRoot}"`);
+  } catch (e) {}
 
   // 1. Local Lock File Check
   // Always put the lock file in the actual process CWD to avoid conflicts across different workspace runs if sharing a runner

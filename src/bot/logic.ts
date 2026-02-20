@@ -159,7 +159,9 @@ export async function processOneMessage(
     try {
       execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
       execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
-    } catch {}
+    } catch (e) {
+      logInstruction(chatId, 'ERROR', `Failed to config git: ${e}`);
+    }
   }
 
   await bot.telegram.sendChatAction(chatId, 'typing').catch(() => {});
@@ -331,11 +333,17 @@ Ready to assist.`;
           execSync('git add .', { cwd: repoRoot });
           const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
           const commitMsg = await generateCommitMessage(diff);
-          execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
+          execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: repoRoot });
+          
+          // Use --force-with-lease and push to origin HEAD to be safe and ensure it works in Actions
+          execSync(`git push origin HEAD`, { cwd: repoRoot });
+          
           logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
+          await safeSendMessage(chatId, `✅ *Changes committed & pushed:* ${commitMsg}`);
         }
       } catch (e: any) {
         logInstruction(chatId, 'ERROR', `Git operation failed: ${e.message}`);
+        await safeSendMessage(chatId, `⚠️ *Git Push Failed:* ${e.message}`);
       }
     }
 
