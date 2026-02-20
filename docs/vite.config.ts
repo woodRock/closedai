@@ -4,5 +4,5 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
-  base: '/closedai/', // Replace with your repository name
+  base: './', // Use relative paths for portability across different repo names
 })

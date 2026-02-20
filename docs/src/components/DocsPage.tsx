@@ -35,9 +35,9 @@ const DocsPage: React.FC = () => {
           </div>
           <div className={`${styles.md_flex} ${styles.hidden} ${styles['items-center']} ${styles['space-x-8']} ${styles['text-sm']} ${styles['font-medium']}`}>
             <a href="#features" className={styles['text-gray-400']}>Features</a>
-            <a href="#how-it-works" className={styles['text-gray-400']}>Workflow</a>
+            <a href="#capabilities" className={styles['text-gray-400']}>Capabilities</a>
+            <a href="#config" className={styles['text-gray-400']}>Config</a>
             <a href="#setup" className={styles['text-gray-400']}>Setup</a>
-            <a href="#instant-mode" className={styles['text-gray-400']}>Instant Mode</a>
             <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-github']}>Star on GitHub</a>
           </div>
         </div>
@@ -102,7 +102,7 @@ const DocsPage: React.FC = () => {
                 <i className={`${styles['text-white']} fas fa-brain`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Powered by Gemini</h3>
-              <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code with massive context windows.</p>
+              <p className={styles['text-gray-400']}>Uses Google's Gemini 1.5 Flash to write high-quality code with massive context windows.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
@@ -115,32 +115,80 @@ const DocsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Workflow */}
-      <section id="how-it-works" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+      {/* Capabilities */}
+      <section id="capabilities" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={styles['max-w-7xl']}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>The Workflow</h2>
-          <div className={`${styles.grid} ${styles.md_grid_cols_3} ${styles['gap-8']}`}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>Tool Capabilities</h2>
+          <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-8']}`}>
             <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <div className={`${styles['text-blue-400']} ${styles['font-bold']} ${styles['mb-4']}`}>01. Command</div>
-              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>Send a Message</h4>
-              <p className={styles['text-gray-400']}>Tell the bot what to do via Telegram. "Fix the login bug" or "Add a new page".</p>
+              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>File Operations</h4>
+              <ul className={`${styles['space-y-2']} ${styles['text-gray-400']}`}>
+                <li><code>read_file</code>: Read file contents</li>
+                <li><code>write_file</code>: Create or overwrite files</li>
+                <li><code>list_directory</code>: Explore repo structure</li>
+                <li><code>delete_file</code>: Remove files</li>
+                <li><code>move_file</code>: Rename or move files</li>
+              </ul>
             </div>
             <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <div className={`${styles['text-purple-400']} ${styles['font-bold']} ${styles['mb-4']}`}>02. Execute</div>
-              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>GitHub Action Triggers</h4>
-              <p className={styles['text-gray-400']}>The agent wakes up in a GitHub Action, analyzes your code, and applies changes.</p>
-            </div>
-            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <div className={`${styles['text-pink-400']} ${styles['font-bold']} ${styles['mb-4']}`}>03. Deploy</div>
-              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>Auto-Commit</h4>
-              <p className={styles['text-gray-400']}>Changes are committed back to your repo. Your site updates automatically.</p>
+              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>System & Communication</h4>
+              <ul className={`${styles['space-y-2']} ${styles['text-gray-400']}`}>
+                <li><code>run_shell</code>: Execute arbitrary shell commands</li>
+                <li><code>search_repo</code>: Recursive grep search</li>
+                <li><code>reply</code>: Send status updates to Telegram</li>
+              </ul>
             </div>
           </div>
         </div>
       </section>
 
+      {/* Configuration */}
+      <section id="config" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={styles['max-w-7xl']}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>Environment Configuration</h2>
+          <div className={styles['table-container']}>
+            <table>
+              <thead>
+                <tr>
+                  <th>Variable</th>
+                  <th>Description</th>
+                  <th>Required</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><code>TELEGRAM_BOT_TOKEN</code></td>
+                  <td>Token from @BotFather</td>
+                  <td>Yes</td>
+                </tr>
+                <tr>
+                  <td><code>GEMINI_API_KEY</code></td>
+                  <td>API Key from Google AI Studio</td>
+                  <td>Yes</td>
+                </tr>
+                <tr>
+                  <td><code>ALLOWED_TELEGRAM_USER_IDS</code></td>
+                  <td>Comma-separated list of authorized IDs</td>
+                  <td>Yes</td>
+                </tr>
+                <tr>
+                  <td><code>WORKSPACE_DIR</code></td>
+                  <td>Path to the repository to manage</td>
+                  <td>No (defaults to .)</td>
+                </tr>
+                <tr>
+                  <td><code>UNSAFE_MODE</code></td>
+                  <td>Set to <code>true</code> to bypass file/command filters</td>
+                  <td>No</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
       {/* Setup */}
-      <section id="setup" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
+      <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
           <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup</h2>
           <div className={styles['space-y-8']}>
@@ -174,47 +222,6 @@ const DocsPage: React.FC = () => {
         </div>
       </section>
 
-      {/* Instant Mode */}
-      <section id="instant-mode" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
-        <div className={styles['max-w-7xl']}>
-          <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-16']} ${styles['items-center']}`}>
-            <div>
-              <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-6']} ${styles['text-white']}`}>Instant Mode</h2>
-              <p className={`${styles['text-lg']} ${styles['text-gray-400']} ${styles['mb-8']}`}>
-                Don't want to wait for GitHub Actions? Run the bot locally or on a private server for sub-second response times.
-              </p>
-              <ul className={`${styles['space-y-4']} ${styles['text-gray-300']} ${styles['mb-8']}`}>
-                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
-                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
-                  <span>Real-time polling for instant updates</span>
-                </li>
-                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
-                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
-                  <span>Zero cold-start latency</span>
-                </li>
-                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
-                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
-                  <span>Full control over the execution environment</span>
-                </li>
-              </ul>
-              <div className={`${styles['bg-black']} ${styles['p-4']} ${styles['rounded-xl']} ${styles['font-mono']} ${styles['text-sm']} ${styles['text-blue-400']}`}>
-                $ npm run start:poll
-              </div>
-            </div>
-            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
-              <div className={`${styles['bg-black/40']} ${styles['rounded-2xl']} ${styles['p-6']} ${styles['text-sm']} ${styles['font-mono']}`}>
-                <div className={styles['text-gray-500']}># supervisor.ts</div>
-                <div className={styles['text-green-400']}>[INFO] Bot started in polling mode...</div>
-                <div className={styles['text-white']}>[RECV] New message from user: 12345</div>
-                <div className={styles['text-blue-400']}>[TASK] Analyzing repository structure...</div>
-                <div className={styles['text-purple-400']}>[AI] Generating solution...</div>
-                <div className={styles['text-green-400']}>[DONE] Applied changes in 0.8s</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Footer */}
       <footer className={`${styles['py-20']} ${styles['text-center']} ${styles['border-t']} ${styles['border-white/10']}`}>
         <div className={`${styles.flex} ${styles['justify-center']} ${styles['items-center']} ${styles['space-x-3']} ${styles['mb-6']}`}>
@@ -227,7 +234,7 @@ const DocsPage: React.FC = () => {
         </div>
         <p className={styles['text-gray-500']}>Empowering developers with autonomous Git workflows.</p>
         <div className={`${styles['mt-8']} ${styles['text-gray-600']} ${styles['text-sm']}`}>
-          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 3 Flash.
+          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 1.5 Flash.
         </div>
       </footer>
     </div>

@@ -60,6 +60,7 @@
 .mb-6 { margin-bottom: 1.5rem; }
 .mb-8 { margin-bottom: 2rem; }
 .mb-12 { margin-bottom: 3rem; }
+.mb-16 { margin-bottom: 4rem; }
 .mb-24 { margin-bottom: 6rem; }
 .mt-1 { margin-top: 0.25rem; }
 .mt-4 { margin-top: 1rem; }
@@ -242,6 +243,46 @@
 
 .icon-box i {
   font-size: 1.5rem;
+}
+
+.table-container {
+  width: 100%;
+  overflow-x: auto;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th {
+  background: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+  padding: 1rem;
+  font-weight: 700;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+td {
+  padding: 1rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: #9ca3af;
+}
+
+tr:last-child td {
+  border-bottom: none;
+}
+
+code {
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.4rem;
+  color: #60a5fa;
+  font-size: 0.9em;
 }
 
 ul {
