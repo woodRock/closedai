@@ -20,6 +20,25 @@ const DocsPage: React.FC = () => {
     return () => window.removeEventListener("scroll", reveal);
   }, []);
 
+  const workflowCode = `name: ClosedAI Agent
+on:
+  schedule:
+    - cron: '*/5 * * * *' # Runs every 5 minutes
+  workflow_dispatch:      # Allows manual triggering
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run ClosedAI
+        uses: woodRock/closedai@main
+        with:
+          telegram_bot_token: \${{ secrets.TELEGRAM_BOT_TOKEN }}
+          gemini_api_key: \${{ secrets.GEMINI_API_KEY }}
+          firebase_service_account: \${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          allowed_user_ids: \${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}`;
+
   return (
     <div className={styles.body}>
       {/* Navbar */}
@@ -34,11 +53,10 @@ const DocsPage: React.FC = () => {
             <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
           </div>
           <div className={`${styles.md_flex} ${styles.hidden} ${styles['items-center']} ${styles['space-x-8']} ${styles['text-sm']} ${styles['font-medium']}`}>
+            <a href="#prerequisites" className={styles['text-gray-400']}>Prerequisites</a>
             <a href="#setup" className={styles['text-gray-400']}>Setup</a>
             <a href="#features" className={styles['text-gray-400']}>Features</a>
-            <a href="#capabilities" className={styles['text-gray-400']}>Capabilities</a>
-            <a href="#config" className={styles['text-gray-400']}>Config</a>
-            <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-github']}>Star on GitHub</a>
+            <a href="https://github.com/marketplace/actions/closedai-devops-on-autopilot" target="_blank" rel="noopener noreferrer" className={styles['btn-github']}>Marketplace</a>
           </div>
         </div>
       </nav>
@@ -47,21 +65,23 @@ const DocsPage: React.FC = () => {
       <section className={`${styles.relative} ${styles['pt-48']} ${styles['pb-32']} ${styles.reveal}`}>
         <div className={`${styles.absolute} ${styles['hero-glow']}`}></div>
         <div className={`${styles['max-w-7xl']} ${styles['px-6']} ${styles['text-center']}`}>
+          <div className={`${styles['inline-block']} ${styles['px-4']} ${styles['py-1']} ${styles['mb-6']} ${styles['rounded-full']} ${styles['bg-blue-500/10']} ${styles['text-blue-400']} ${styles['text-sm']} ${styles['font-medium']} ${styles['border']} ${styles['border-blue-500/20']}`}>
+            v1.0.0 Now Available on GitHub Marketplace
+          </div>
           <h1 className={`${styles['text-7xl']} ${styles.md_text_9xl} ${styles['font-extrabold']} ${styles['mb-8']} ${styles['text-white']}`}>
-            DevOps on <br />
-            <span className={styles['gradient-text']}>Autopilot.</span>
+            Automate DevOps <br />
+            <span className={styles['gradient-text']}>with GitHub Actions.</span>
           </h1>
           <p className={`${styles['text-xl']} ${styles['text-gray-400']} ${styles['max-w-3xl']} ${styles['mb-12']} ${styles['font-light']}`}>
-            Meet the first autonomous AI agent designed to live inside your{' '}
-            <span className={`${styles['text-white']} ${styles['font-medium']}`}>GitHub Actions</span>.
-            Build, refactor, and manage your entire codebase via Telegram.
+            ClosedAI is an autonomous AI agent that lives in your GitHub Actions. 
+            Control your repository, run commands, and deploy code directly from Telegram.
           </p>
           <div className={`${styles.flex} ${styles['justify-center']} ${styles['gap-6']} ${styles['mb-24']}`}>
-            <a href="#setup" className={styles['btn-primary']}>
-              Get Started
+            <a href="https://github.com/marketplace/actions/closedai-devops-on-autopilot" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+              Deploy to GitHub
             </a>
-            <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-secondary']}>
-              View Source
+            <a href="#setup" className={styles['btn-secondary']}>
+              Setup Guide
             </a>
           </div>
 
@@ -71,98 +91,137 @@ const DocsPage: React.FC = () => {
               <div className={`${styles['bg-black']} ${styles['rounded-2xl']} ${styles['p-8']} ${styles['text-left']} ${styles['font-mono']} ${styles['text-sm']}`}>
                 <div className={styles['mb-6']}>
                   <span className={styles['text-blue-400']}>Telegram:</span>
-                  <span className={`${styles['text-gray-300']} ${styles['p-4']}`}>"Update the app entry point"</span>
+                  <span className={`${styles['text-gray-300']} ${styles['p-4']}`}>"Build the project and deploy to production"</span>
                 </div>
-                <div className={`${styles['text-yellow-400']} ${styles['mb-4']}`}>Executing: write_file to src/main.tsx</div>
+                <div className={`${styles['text-yellow-400']} ${styles['mb-4']}`}>Executing: shell command "npm run build && firebase deploy"</div>
                 <div className={`${styles['bg-black']} ${styles['p-4']} ${styles['rounded-xl']} ${styles['text-gray-400']}`}>
-                  <div>1 | <span className={styles['text-purple-400']}>import</span> React <span className={styles['text-purple-400']}>from</span> <span className={styles['text-green-400']}>'react'</span></div>
-                  <div>2 | <span className={styles['text-purple-400']}>import</span> {'{'} createRoot {'}'} <span className={styles['text-purple-400']}>from</span> <span className={styles['text-green-400']}>'react-dom/client'</span></div>
-                  <div>3 | <span className={styles['text-purple-400']}>import</span> App <span className={styles['text-purple-400']}>from</span> <span className={styles['text-green-400']}>'./App'</span></div>
+                  <div>{'>'} Building for production...</div>
+                  <div>{'>'} Uploading to Firebase...</div>
+                  <div>{'>'} Project Console: https://console.firebase.google.com/...</div>
                 </div>
-                <div className={`${styles['text-green-400']} ${styles['mt-4']}`}>Successfully updated src/main.tsx</div>
+                <div className={`${styles['text-green-400']} ${styles['mt-4']}`}>Deployment successful! Live at: https://closed-ai.web.app</div>
               </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Setup */}
-      <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
-        <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>GitHub Marketplace Setup</h2>
-          <div className={styles['space-y-8']}>
+      {/* Prerequisites */}
+      <section id="prerequisites" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={`${styles['max-w-4xl']} ${styles['mx-auto']}`}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-center']} ${styles['text-white']}`}>Prerequisites</h2>
+          <p className={`${styles['text-center']} ${styles['text-gray-400']} ${styles['mb-12']}`}>Before you deploy, make sure you have the following credentials ready.</p>
+          <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-8']}`}>
+            <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>1. Telegram Bot Token</h3>
+              <p className={styles['text-gray-400']}>Message <a href="https://t.me/botfather" className={styles['text-blue-400']}>@BotFather</a> on Telegram to create a new bot and get your API token.</p>
+            </div>
+            <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>2. Gemini API Key</h3>
+              <p className={styles['text-gray-400']}>Get a free API key for Gemini 1.5 Flash from <a href="https://aistudio.google.com/" className={styles['text-blue-400']}>Google AI Studio</a>.</p>
+            </div>
+            <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>3. Firebase Service Account</h3>
+              <p className={styles['text-gray-400']}>Create a Firebase project, go to Project Settings {'>'} Service Accounts, and generate a new private key (JSON).</p>
+            </div>
+            <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
+              <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>4. Authorized User IDs</h3>
+              <p className={styles['text-gray-400']}>Find your Telegram User ID using <a href="https://t.me/userinfobot" className={styles['text-blue-400']}>@userinfobot</a> to ensure only you can control the agent.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Setup Guide */}
+      <section id="setup" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={`${styles['max-w-4xl']} ${styles['mx-auto']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>How to Setup</h2>
+          <div className={styles['space-y-12']}>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>1</div>
-              <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add Workflow File</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository.</p>
-                <div className={styles['code-block']}>
-                  name: ClosedAI Agent<br/>
-                  on:<br/>
-                  &nbsp;&nbsp;schedule:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;- cron: '*/5 * * * *'<br/>
-                  &nbsp;&nbsp;workflow_dispatch:<br/>
-                  <br/>
-                  permissions:<br/>
-                  &nbsp;&nbsp;contents: write<br/>
-                  <br/>
-                  jobs:<br/>
-                  &nbsp;&nbsp;run-bot:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;steps:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- uses: actions/checkout@v4<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;fetch-depth: 0<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: Run ClosedAI<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uses: woodRock/closedai@main<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: {'${{ secrets.TELEGRAM_BOT_TOKEN }}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: {'${{ secrets.GEMINI_API_KEY }}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: {'${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: {'${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}'}
+              <div className={styles['w-full']}>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Add GitHub Secrets</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Navigate to your repo <b>Settings {'>'} Secrets and variables {'>'} Actions</b> and add:</p>
+                <div className={styles['table-container']}>
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Secret Name</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td><code>TELEGRAM_BOT_TOKEN</code></td>
+                        <td>Token from @BotFather</td>
+                      </tr>
+                      <tr>
+                        <td><code>GEMINI_API_KEY</code></td>
+                        <td>Key from Google AI Studio</td>
+                      </tr>
+                      <tr>
+                        <td><code>FIREBASE_SERVICE_ACCOUNT</code></td>
+                        <td>Full content of the service account JSON</td>
+                      </tr>
+                      <tr>
+                        <td><code>ALLOWED_TELEGRAM_USER_IDS</code></td>
+                        <td>Comma-separated IDs (e.g., 12345678)</td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>2</div>
               <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
-                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Add your <code>TELEGRAM_BOT_TOKEN</code>, <code>GEMINI_API_KEY</code>, <code>FIREBASE_SERVICE_ACCOUNT</code>, and <code>ALLOWED_TELEGRAM_USER_IDS</code> to your GitHub Repository Secrets.</p>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Workflow File</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Create <code>.github/workflows/closedai.yml</code> in your repository:</p>
+                <pre className={styles['code-block']}>
+                  {workflowCode}
+                </pre>
+              </div>
+            </div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>3</div>
+              <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Start Chatting</h4>
+                <p className={`${styles['text-gray-400']}`}>Once the action runs (or you trigger it manually), open your Telegram bot and send a message like <code>"Hello, what can you do?"</code>.</p>
               </div>
             </div>
           </div>
-          <div className={`${styles['mt-12']} ${styles['text-center']}`}>
-            <a href="https://github.com/woodRock/closedai#github-marketplace-setup" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
-              View Full Setup Guide
+          <div className={`${styles['mt-16']} ${styles['text-center']}`}>
+            <a href="https://github.com/marketplace/actions/closedai-devops-on-autopilot" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+              View on Marketplace
             </a>
           </div>
         </div>
       </section>
 
       {/* Features */}
-      <section id="features" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
+      <section id="features" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={styles['max-w-7xl']}>
           <div className={`${styles.grid} ${styles.md_grid_cols_3} ${styles['gap-12']}`}>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-blue-600']}`}>
-                <i className={`${styles['text-white']} fas fa-piggy-bank`}></i>
+                <i className={`${styles['text-white']} fas fa-bolt`}></i>
               </div>
-              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Zero Overhead</h3>
-              <p className={styles['text-gray-400']}>Runs within the generous free tier of GitHub Actions. No servers to maintain.</p>
+              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Instant Execution</h3>
+              <p className={styles['text-gray-400']}>Runs your commands in the secure environment of GitHub Actions, with full access to your repo.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-purple-500']}`}>
                 <i className={`${styles['text-white']} fas fa-brain`}></i>
               </div>
-              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Powered by Gemini</h3>
-              <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code with massive context windows.</p>
+              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Advanced Reasoning</h3>
+              <p className={styles['text-gray-400']}>Powered by Gemini 1.5 Flash, capable of understanding complex project structures and codebases.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
-                <i className={`${styles['text-white']} fas fa-shield-virus`}></i>
+                <i className={`${styles['text-white']} fas fa-lock`}></i>
               </div>
-              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Sandboxed</h3>
-              <p className={styles['text-gray-400']}>Isolated environment for every task. Your main environment stays clean and safe.</p>
+              <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Secure Access</h3>
+              <p className={styles['text-gray-400']}>Strictly limited to authorized Telegram User IDs. Your repository remains safe and private.</p>
             </div>
           </div>
         </div>
@@ -178,9 +237,9 @@ const DocsPage: React.FC = () => {
           </div>
           <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
         </div>
-        <p className={styles['text-gray-500']}>Empowering developers with autonomous Git workflows.</p>
+        <p className={styles['text-gray-500']}>The first autonomous AI agent for GitHub Actions.</p>
         <div className={`${styles['mt-8']} ${styles['text-gray-600']} ${styles['text-sm']}`}>
-          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 3 Flash.
+          &copy; {new Date().getFullYear()} ClosedAI. Built for the future of DevOps.
         </div>
       </footer>
     </div>
