@@ -54,10 +54,12 @@ async function downloadImage(fileId: string) {
 
 async function run() {
   const isPolling = process.argv.includes('--poll');
-  const repoRoot = process.cwd();
+  // Use WORKSPACE_DIR if provided (e.g., in GitHub Actions), otherwise use current directory
+  const repoRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : process.cwd();
 
   // 1. Local Lock File Check
-  const lockFile = path.resolve(repoRoot, '.bot.lock');
+  // Always put the lock file in the actual process CWD to avoid conflicts across different workspace runs if sharing a runner
+  const lockFile = path.resolve(process.cwd(), '.bot.lock');
   if (fs.existsSync(lockFile)) {
     try {
       const pid = parseInt(fs.readFileSync(lockFile, 'utf8'), 10);

@@ -89,8 +89,24 @@ async function main() {
   const allowedIds = (await question("🛡️  Telegram User ID(s) (comma-separated, leave blank for public): ")).trim();
 
   // 4. Firebase Setup
-  const firebasePath = (await question("🔥 Path to Firebase JSON (e.g., ./firebase-key.json): ")).trim();
+  console.log(pc.bold("\n🔥 Firebase Configuration"));
+  let firebasePath = "";
   let serviceAccountContent = "";
+  let projectId = "";
+
+  const autoFirebase = (await question("Do you want to use Firebase CLI to automate index deployment? (y/n): ")).toLowerCase() === 'y';
+  
+  if (autoFirebase) {
+    try {
+      execSync('firebase --version', { stdio: 'ignore' });
+    } catch (e) {
+      console.log(pc.yellow("Firebase CLI not found. Please install it with 'npm install -g firebase-tools' and run 'firebase login'."));
+      process.exit(1);
+    }
+  }
+
+  firebasePath = (await question("📂 Path to Firebase Service Account JSON: ")).trim();
+
   const firebaseProgress = new cliProgress.SingleBar({
     format: pc.cyan('Validating Firebase |') + pc.blue('{bar}') + '| {percentage}%',
     barCompleteChar: '\u2588',
@@ -103,6 +119,7 @@ async function main() {
     const fullPath = path.resolve(firebasePath);
     serviceAccountContent = fs.readFileSync(fullPath, 'utf-8');
     const serviceAccount = JSON.parse(serviceAccountContent);
+    projectId = serviceAccount.project_id;
     firebaseProgress.update(30);
     const app = initializeApp({ credential: cert(serviceAccount) }, "setup");
     const db = getFirestore(app);
@@ -115,6 +132,18 @@ async function main() {
     firebaseProgress.stop();
     console.error(pc.red("❌ Firebase Service Account: invalid: " + e.message));
     process.exit(1);
+  }
+
+  if (autoFirebase) {
+    console.log(pc.bold("🚀 Deploying Firestore Indexes..."));
+    try {
+      execSync(`firebase use ${projectId} --add default`, { stdio: 'inherit' });
+      execSync('firebase deploy --only firestore:indexes', { stdio: 'inherit' });
+      console.log(pc.green("✅ Firestore Indexes: deployed.\n"));
+    } catch (e: any) {
+      console.error(pc.red("❌ Failed to deploy indexes: " + e.message));
+      console.log(pc.yellow("You may need to run 'firebase login' or ensure Firestore is enabled in the console."));
+    }
   }
 
   // 5. Automated GitHub Secret Setup

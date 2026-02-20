@@ -154,10 +154,13 @@ export async function processOneMessage(
 
   logInstruction(chatId, 'GEMINI', `Processing: ${userMessage ? userMessage.substring(0, 50) : 'Image'}${userMessage && userMessage.length > 50 ? '...' : ''}`);
   
-  try {
-    execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
-    execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
-  } catch {}
+  const isGitRepo = fs.existsSync(path.join(repoRoot, '.git'));
+  if (isGitRepo) {
+    try {
+      execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
+      execSync('git config user.email "bot@closedai.local"', { cwd: repoRoot });
+    } catch {}
+  }
 
   await bot.telegram.sendChatAction(chatId, 'typing').catch(() => {});
 
@@ -321,16 +324,20 @@ Ready to assist.`;
     }
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
-    try {
-      const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
-      if (status.length > 0) {
-        execSync('git add .', { cwd: repoRoot });
-        const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
-        const commitMsg = await generateCommitMessage(diff);
-        execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
-        logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
+    if (isGitRepo) {
+      try {
+        const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
+        if (status.length > 0) {
+          execSync('git add .', { cwd: repoRoot });
+          const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
+          const commitMsg = await generateCommitMessage(diff);
+          execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}" && git push`, { cwd: repoRoot });
+          logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
+        }
+      } catch (e: any) {
+        logInstruction(chatId, 'ERROR', `Git operation failed: ${e.message}`);
       }
-    } catch (e: any) {}
+    }
 
     if (messageId) {
       await db.collection('queue').doc(messageId).delete().catch(() => {});
