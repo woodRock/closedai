@@ -17,6 +17,7 @@ export function logInstruction(chatId: number, type: string, details: string) {
     'SHELL': pc.yellow,
     'REPLY': pc.green,
     'GEMINI': pc.magenta,
+    'GIT': pc.blue,
     'ERROR': pc.red,
     'CMD': pc.white,
     'INFO': pc.gray

@@ -108,6 +108,90 @@ export const toolDefinitions = [
           },
           required: ["command"]
         }
+      },
+      {
+        name: "git_status",
+        description: "Show the working tree status.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {}
+        }
+      },
+      {
+        name: "git_log",
+        description: "Show commit logs.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            limit: { type: SchemaType.NUMBER, description: "Number of commits to show." }
+          }
+        }
+      },
+      {
+        name: "git_diff",
+        description: "Show changes between commits, commit and working tree, etc.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            cached: { type: SchemaType.BOOLEAN, description: "Show only staged changes." }
+          }
+        }
+      },
+      {
+        name: "git_add",
+        description: "Add file contents to the index.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Path to add. Use '.' for all." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "git_commit",
+        description: "Record changes to the repository.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            message: { type: SchemaType.STRING, description: "Commit message." }
+          },
+          required: ["message"]
+        }
+      },
+      {
+        name: "git_push",
+        description: "Update remote refs.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            remote: { type: SchemaType.STRING, description: "Remote name (default: origin)." },
+            branch: { type: SchemaType.STRING, description: "Branch name (default: current)." }
+          }
+        }
+      },
+      {
+        name: "git_checkout",
+        description: "Switch branches or restore working tree files.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            branch: { type: SchemaType.STRING, description: "Branch name to checkout." },
+            create: { type: SchemaType.BOOLEAN, description: "Create branch if it doesn't exist (-b)." }
+          },
+          required: ["branch"]
+        }
+      },
+      {
+        name: "git_branch",
+        description: "List, create, or delete branches.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            list: { type: SchemaType.BOOLEAN, description: "List branches." },
+            delete: { type: SchemaType.STRING, description: "Delete branch name." }
+          }
+        }
       }
     ]
   }
@@ -310,6 +394,45 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       }
       content = { result: execSync(cmd, { cwd: activeRoot }).toString() };
       logInstruction(chatId, 'SHELL', cmd);
+    } else if (normalizedName === "git_status") {
+      content = { result: execSync("git status", { cwd: activeRoot }).toString() };
+      logInstruction(chatId, 'GIT', 'status');
+    } else if (normalizedName === "git_log") {
+      const limit = args.limit || 10;
+      content = { result: execSync(`git log -n ${limit} --oneline`, { cwd: activeRoot }).toString() };
+      logInstruction(chatId, 'GIT', `log -n ${limit}`);
+    } else if (normalizedName === "git_diff") {
+      const cmd = args.cached ? "git diff --cached" : "git diff";
+      content = { result: execSync(cmd, { cwd: activeRoot }).toString() };
+      logInstruction(chatId, 'GIT', args.cached ? 'diff --cached' : 'diff');
+    } else if (normalizedName === "git_add") {
+      execSync(`git add ${args.path}`, { cwd: activeRoot });
+      content = { result: `Success: Added ${args.path}` };
+      logInstruction(chatId, 'GIT', `add ${args.path}`);
+    } else if (normalizedName === "git_commit") {
+      execSync(`git commit -m "${args.message.replace(/"/g, '\\"')}"`, { cwd: activeRoot });
+      content = { result: `Success: Committed with message: ${args.message}` };
+      logInstruction(chatId, 'GIT', `commit -m "${args.message}"`);
+    } else if (normalizedName === "git_push") {
+      const remote = args.remote || "origin";
+      const branch = args.branch || "HEAD";
+      execSync(`git push ${remote} ${branch}`, { cwd: activeRoot });
+      content = { result: `Success: Pushed to ${remote} ${branch}` };
+      logInstruction(chatId, 'GIT', `push ${remote} ${branch}`);
+    } else if (normalizedName === "git_checkout") {
+      const flag = args.create ? "-b" : "";
+      execSync(`git checkout ${flag} ${args.branch}`, { cwd: activeRoot });
+      content = { result: `Success: Checked out ${args.branch}` };
+      logInstruction(chatId, 'GIT', `checkout ${flag} ${args.branch}`);
+    } else if (normalizedName === "git_branch") {
+      if (args.delete) {
+        execSync(`git branch -D ${args.delete}`, { cwd: activeRoot });
+        content = { result: `Success: Deleted branch ${args.delete}` };
+        logInstruction(chatId, 'GIT', `branch -D ${args.delete}`);
+      } else {
+        content = { result: execSync("git branch", { cwd: activeRoot }).toString() };
+        logInstruction(chatId, 'GIT', 'branch');
+      }
     } else {
       content = { error: `Unknown tool: ${name}` };
       logInstruction(chatId, 'ERROR', `Model tried to call unknown tool: ${name}`);

@@ -14,4 +14,5 @@ try {
 
 const app = initializeApp({ credential: cert(serviceAccount) });
 export const db = getFirestore(app);
+db.settings({ ignoreUndefinedProperties: true });
 export { FieldValue };
