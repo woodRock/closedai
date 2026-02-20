@@ -3,6 +3,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
 import { logInstruction } from '../utils/logger.js';
+import pc from 'picocolors';
 
 export const toolDefinitions = [
   {
@@ -154,11 +155,34 @@ function isShellCommandSafe(command: string): boolean {
   return true;
 }
 
+function formatCodeForTerminal(content: string, filePath: string): string {
+  const lines = content.split('\n');
+  const ext = path.extname(filePath);
+  
+  return lines.map((line, i) => {
+    const lineNum = pc.gray((i + 1).toString().padStart(3) + ' | ');
+    let coloredLine = line;
+    
+    // Very basic regex-based syntax highlighting for the terminal
+    if (['.ts', '.tsx', '.js', '.jsx', '.json'].includes(ext)) {
+      coloredLine = line
+        .replace(/\b(import|export|from|const|let|var|function|return|if|else|for|while|await|async|type|interface|class|extends|default)\b/g, pc.magenta('$1'))
+        .replace(/(['"`].*?['"`])/g, pc.green('$1'))
+        .replace(/\b(true|false|null|undefined)\b/g, pc.yellow('$1'))
+        .replace(/\b(\d+)\b/g, pc.cyan('$1'));
+    } else if (['.yml', '.yaml'].includes(ext)) {
+      coloredLine = line
+        .replace(/^(\s*)([\w-]+):/g, `$1${pc.blue('$2')}:`)
+        .replace(/(['"`].*?['"`])/g, pc.green('$1'));
+    }
+    
+    return lineNum + coloredLine;
+  }).join('\n');
+}
+
 export async function executeTool(name: string, args: any, repoRoot: string, chatId: number, safeSendMessage: (chatId: number, text: string) => Promise<any>) {
   let content;
-  // Gemini 3 sometimes prefixes tool names
   const normalizedName = name.replace(/^default_api:/, '');
-  // If WORKSPACE_DIR is set, use it instead of repoRoot for file operations
   const activeRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : repoRoot;
   
   try {
@@ -168,11 +192,17 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, args.content);
       content = { result: `Success: Wrote to ${p}` };
+      
       logInstruction(chatId, 'WRITE', p);
+      console.log(pc.gray('--- File Content ---'));
+      console.log(formatCodeForTerminal(args.content, p));
+      console.log(pc.gray('--------------------'));
+
     } else if (normalizedName === "read_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
-      content = { result: fs.readFileSync(fullPath, "utf-8") };
+      const fileContent = fs.readFileSync(fullPath, "utf-8");
+      content = { result: fileContent };
       logInstruction(chatId, 'READ', p);
     } else if (normalizedName === "list_directory") {
       const p = args.path || '.';

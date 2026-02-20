@@ -133,31 +133,31 @@ const DocsPage: React.FC = () => {
                       </div>
                       <div className="p-4 text-[12px] leading-6 font-mono whitespace-pre">
                         <div className="flex">
-                          <span className="text-gray-600 w-6 mr-4 text-right select-none">1</span>
+                          <span className="text-gray-600 w-12 mr-2 text-right select-none">1 | </span>
                           <span><span className="text-purple-400">import</span> React <span className="text-purple-400">from</span> <span className="text-green-400">'react'</span></span>
                         </div>
                         <div className="flex">
-                          <span className="text-gray-600 w-6 mr-4 text-right select-none">2</span>
+                          <span className="text-gray-600 w-12 mr-2 text-right select-none">2 | </span>
                           <span><span className="text-purple-400">import</span> {'{'} createRoot {'}'} <span className="text-purple-400">from</span> <span className="text-green-400">'react-dom/client'</span></span>
                         </div>
                         <div className="flex">
-                          <span className="text-gray-600 w-6 mr-4 text-right select-none">3</span>
+                          <span className="text-gray-600 w-12 mr-2 text-right select-none">3 | </span>
                           <span><span className="text-purple-400">import</span> App <span className="text-purple-400">from</span> <span className="text-green-400">'./App'</span></span>
                         </div>
                         <div className="flex">
-                          <span className="text-gray-600 w-6 mr-4 text-right select-none">4</span>
+                          <span className="text-gray-600 w-12 mr-2 text-right select-none">4 | </span>
                           <span></span>
                         </div>
                         <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
-                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">5</span>
+                          <span className="text-blue-400/50 w-12 mr-2 text-right select-none">5 | </span>
                           <span><span className="text-blue-400">createRoot</span>(document.<span className="text-yellow-300">getElementById</span>(<span className="text-green-400">'root'</span>)!).<span className="text-yellow-300">render</span>(</span>
                         </div>
                         <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
-                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">6</span>
+                          <span className="text-blue-400/50 w-12 mr-2 text-right select-none">6 | </span>
                           <span>  &lt;<span className="text-blue-400">App</span> /&gt;</span>
                         </div>
                         <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
-                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">7</span>
+                          <span className="text-blue-400/50 w-12 mr-2 text-right select-none">7 | </span>
                           <span>);</span>
                         </div>
                       </div>
@@ -187,7 +187,6 @@ const DocsPage: React.FC = () => {
           </div>
 
           <div className="grid md:grid-cols-4 gap-4 relative">
-              {/* Connectors (Desktop) */}
               <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-y-1/2 -z-10"></div>
 
               <div className={`p-8 rounded-3xl text-center ${styles.glass}`}>

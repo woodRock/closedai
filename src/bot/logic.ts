@@ -59,20 +59,18 @@ async function getChatHistory(chatId: number, limit = 20) {
     const parts = data.parts || (data.text ? [{ text: data.text }] : []);
     if (parts.length === 0) continue;
 
-    // Determine the correct role based on content
     let role = data.role;
     const hasFunctionResponse = parts.some((p: any) => p.functionResponse);
     const hasFunctionCall = parts.some((p: any) => p.functionCall);
 
     if (hasFunctionResponse) {
-      role = 'user'; // Changed from 'function' for Gemini 3 compatibility
+      role = 'user';
     } else if (hasFunctionCall || role === 'model') {
       role = 'model';
     } else {
       role = 'user';
     }
     
-    // IMPORTANT: Do not merge turns. Gemini 3 is sensitive to turn structure.
     history.push({ role, parts });
   }
 
@@ -90,14 +88,10 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   const history = await getChatHistory(chatId);
   const geminiHistory = [...history];
   
-  // To be used with generateContent, history must start with 'user' role
   while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
     geminiHistory.shift();
   }
   
-  // Ensure the history ends correctly. 
-  // If it ends with a model turn that has function calls, we MUST have the response turn after it.
-  // If not, we remove the model turn.
   if (geminiHistory.length > 0) {
     let last = geminiHistory[geminiHistory.length - 1];
     while (geminiHistory.length > 0) {
@@ -105,22 +99,13 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
       if (last.role === 'model') {
         const hasCalls = last.parts.some((p: any) => p.functionCall);
         if (hasCalls) {
-          // This model turn had calls. Was it followed by a function turn?
-          // We can't know for sure without checking the original full history,
-          // but we can assume if it's the LAST turn, it's missing the response.
           geminiHistory.pop();
           continue;
         }
-        break; // Ends on a safe model turn
+        break;
       } else if (last.role === 'function') {
-        // A function turn MUST be preceded by a model turn with calls.
-        // If it's the last turn, it's valid, but the model needs to process it.
         break; 
       } else {
-        // User turn at the end is fine, but usually we want to end on model.
-        // Actually, for startChat/generateContent, ending on User is fine if we are about to send a Model turn.
-        // But here we are about to send a NEW User message.
-        // So history should ideally end on Model or Function.
         break;
       }
     }
@@ -172,7 +157,6 @@ Ready to assist.`;
     ...geminiHistory
   ];
 
-  // Start with the user message
   currentHistory.push({ role: 'user', parts: [{ text: userMessage }] });
 
   try {
@@ -202,13 +186,10 @@ Ready to assist.`;
       };
 
       const result = await model.generateContentStream({ contents: currentHistory });
-
-      // Collect thought signatures manually because the SDK aggregator strips them
       const signatures: (string | undefined)[] = [];
 
       for await (const chunk of result.stream) {
         try {
-          // Track signatures in this chunk
           const chunkParts = chunk.candidates?.[0]?.content?.parts;
           if (chunkParts) {
             for (const part of chunkParts) {
@@ -236,19 +217,12 @@ Ready to assist.`;
       const response = await result.response;
       const modelTurnParts = response.candidates?.[0]?.content?.parts || [];
 
-      // Restore missing signatures to fix SDK aggregator bug
-      // Gemini 3 REQUIRES thought_signature for function calls.
       if (modelTurnParts.length > 0) {
         for (let i = 0; i < modelTurnParts.length; i++) {
           const part = modelTurnParts[i] as any;
-          
-          // Try to restore from collected signatures
           if (signatures[i]) {
             part.thought_signature = signatures[i];
           }
-          
-          // Fallback: If it's a function call and still missing signature, use a dummy one
-          // as recommended by Google docs for "context engineering" or bypassing validation.
           if (part.functionCall && !part.thought_signature) {
             part.thought_signature = "skip_thought_signature_validator";
           }
@@ -256,7 +230,6 @@ Ready to assist.`;
       }
 
       if (modelTurnParts.length > 0) {
-        // Save to history and update local history
         await db.collection('history').add({
           chatId,
           role: 'model',
@@ -272,17 +245,24 @@ Ready to assist.`;
         break;
       }
 
-      // Handle function calls
       const functionResponses = [];
       for (const call of functionCalls) {
         const { name, args } = call;
-        const argString = JSON.stringify(args);
-        console.log(`   👉 Tool Call: ${name}(${argString})`);
+        const normalizedName = name.replace(/^default_api:/, '');
         
-        let actionMsg = `🛠️ *Executing:* \`${name}\``;
-        if (name === 'run_shell') actionMsg += `\n\`${args.command}\``;
-        else if (name === 'write_file') actionMsg += ` to \`${args.path}\``;
-        else if (name === 'read_file') actionMsg += ` \`${args.path}\``;
+        let actionMsg = `🛠️ *Executing:* \`${normalizedName}\``;
+        if (normalizedName === 'run_shell') {
+          actionMsg += `\n\`\`\`bash\n$ ${args.command}\n\`\`\``;
+        } else if (normalizedName === 'write_file') {
+          const lines = args.content.split('\n');
+          const formatted = lines.map((l: string, i: number) => `${(i + 1).toString().padStart(3)} | ${l}`).join('\n');
+          const lang = args.path.split('.').pop() || '';
+          actionMsg += ` to \`${args.path}\`\n\n\`\`\`${lang}\n${formatted}\n\`\`\``;
+        } else if (normalizedName === 'read_file') {
+          actionMsg += ` \`${args.path}\``;
+        } else if (normalizedName === 'list_directory') {
+          actionMsg += ` \`${args.path || '.'}\``;
+        }
         
         await safeSendMessage(chatId, actionMsg);
 
@@ -290,10 +270,9 @@ Ready to assist.`;
         functionResponses.push({ functionResponse: { name, response: content } });
       }
       
-      // Save tool responses and update local history
       await db.collection('history').add({
         chatId,
-        role: 'user', // Changed from 'function'
+        role: 'user',
         parts: functionResponses,
         timestamp: FieldValue.serverTimestamp()
       });
@@ -304,7 +283,6 @@ Ready to assist.`;
     }
     logInstruction(chatId, 'GEMINI', 'Request sequence finished.');
 
-    // Git sync...
     try {
       const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
       if (status.length > 0) {
