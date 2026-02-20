@@ -166,6 +166,11 @@ const DocsPage: React.FC = () => {
                   <td>Yes</td>
                 </tr>
                 <tr>
+                  <td><code>FIREBASE_SERVICE_ACCOUNT</code></td>
+                  <td>JSON string of your Firebase Service Account key</td>
+                  <td>Yes</td>
+                </tr>
+                <tr>
                   <td><code>ALLOWED_TELEGRAM_USER_IDS</code></td>
                   <td>Comma-separated list of authorized IDs</td>
                   <td>Yes</td>
@@ -205,18 +210,30 @@ const DocsPage: React.FC = () => {
               <div className={styles['step-number']}>2</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Telegram Bot</h4>
-                <p className={styles['text-gray-400']}>Message @BotFather to get your API token.</p>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Message <a href="https://t.me/botfather" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>@BotFather</a> on Telegram and follow the instructions to create a new bot and get your API token.</p>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>3</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Get Gemini Key</h4>
-                <p className={styles['text-gray-400']}>Generate an API key from Google AI Studio.</p>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Generate an API key from <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Google AI Studio</a>.</p>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>4</div>
+              <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Setup Firebase</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>
+                  1. Create a new project in the <a href="https://console.firebase.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Firebase Console</a>.<br/>
+                  2. In the project settings, navigate to <span className={styles['text-white']}>Service Accounts</span>.<br/>
+                  3. Click <span className={styles['text-white']}>Generate new private key</span>.<br/>
+                  4. Save the JSON file; you'll need its contents for the <code>FIREBASE_SERVICE_ACCOUNT</code> secret.
+                </p>
+              </div>
+            </div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>5</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
                 <p className={styles['text-gray-400']}>Add tokens to your GitHub Repository Secrets. Use the setup script to help you gather the necessary IDs:</p>
