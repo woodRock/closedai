@@ -8,6 +8,7 @@ import { logInstruction } from '../utils/logger.js';
 import { handleSystemCommands } from './commands.js';
 import { executeTool } from '../tools/index.js';
 import { getConfig } from '../utils/config.js';
+import { GoogleGenerativeAIError } from '@google/generative-ai';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
@@ -385,6 +386,7 @@ Ready to assist.`;
     
     // Broaden error detection for overloaded/503/504 errors
     const isOverloaded = 
+      error instanceof GoogleGenerativeAIError ||
       error.status === 503 || 
       error.status === 504 ||
       error.status === 429 ||
