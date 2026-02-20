@@ -20,6 +20,9 @@ on:
     - cron: '*/5 * * * *' # Check for messages every 5 minutes
   workflow_dispatch:      # Allow manual trigger
 
+permissions:
+  contents: write         # Required for the bot to push code changes
+
 jobs:
   run-bot:
     runs-on: ubuntu-latest

@@ -103,6 +103,9 @@ const DocsPage: React.FC = () => {
                   &nbsp;&nbsp;&nbsp;&nbsp;- cron: '*/5 * * * *'<br/>
                   &nbsp;&nbsp;workflow_dispatch:<br/>
                   <br/>
+                  permissions:<br/>
+                  &nbsp;&nbsp;contents: write<br/>
+                  <br/>
                   jobs:<br/>
                   &nbsp;&nbsp;run-bot:<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;runs-on: ubuntu-latest<br/>
