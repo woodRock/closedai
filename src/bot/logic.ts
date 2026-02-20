@@ -307,6 +307,8 @@ Ready to assist.`;
           const formatted = lines.map((l: string, i: number) => `${(i + 1).toString().padStart(3)} | ${l}`).join('\n');
           const lang = args.path.split('.').pop() || '';
           actionMsg += ` to \`${args.path}\`\n\n\`\`\`${lang}\n${formatted}\n\`\`\``;
+        } else if (normalizedName === 'patch_file') {
+          actionMsg += ` on \`${args.path}\``;
         } else if (normalizedName === 'read_file') {
           actionMsg += ` \`${args.path}\``;
         } else if (normalizedName === 'list_directory') {
@@ -316,6 +318,12 @@ Ready to assist.`;
         await safeSendMessage(chatId, actionMsg);
 
         const content = await executeTool(name, args, repoRoot, chatId, safeSendMessage);
+        
+        if (normalizedName === 'patch_file' && content.result && !content.error) {
+          const diff = content.result.split('\n\n')[1] || content.result;
+          await safeSendMessage(chatId, `✅ *Patched:* \`${args.path}\`\n\`\`\`diff\n${diff}\n\`\`\``);
+        }
+
         functionResponses.push({ functionResponse: { name, response: content } });
       }
       

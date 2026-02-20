@@ -21,6 +21,28 @@ export const toolDefinitions = [
         }
       },
       {
+        name: "patch_file",
+        description: "Apply search-and-replace patches to a file. This is more efficient than write_file for large files. Each patch must match exactly one block of text.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." },
+            patches: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  search: { type: SchemaType.STRING, description: "The exact block of text to find." },
+                  replace: { type: SchemaType.STRING, description: "The block of text to replace it with." }
+                },
+                required: ["search", "replace"]
+              }
+            }
+          },
+          required: ["path", "patches"]
+        }
+      },
+      {
         name: "read_file",
         description: "Read the content of a file.",
         parameters: {
@@ -169,6 +191,26 @@ function formatCodeForTerminal(content: string, filePath: string): string {
   }).join('\n');
 }
 
+function generateDiff(path: string, search: string, replace: string, useColor = false): string {
+  const red = useColor ? (s: string) => pc.red(s) : (s: string) => s;
+  const green = useColor ? (s: string) => pc.green(s) : (s: string) => s;
+  const bold = useColor ? (s: string) => pc.bold(s) : (s: string) => s;
+
+  let diff = `${bold('--- ' + path)}\n${bold('+++ ' + path)}\n`;
+  
+  const searchLines = search.split('\n');
+  const replaceLines = replace.split('\n');
+
+  for (const line of searchLines) {
+    diff += red('- ' + line) + '\n';
+  }
+  for (const line of replaceLines) {
+    diff += green('+ ' + line) + '\n';
+  }
+  
+  return diff;
+}
+
 export async function executeTool(name: string, args: any, repoRoot: string, chatId: number, safeSendMessage: (chatId: number, text: string) => Promise<any>) {
   let content;
   const normalizedName = name.replace(/^default_api:/, '');
@@ -186,6 +228,42 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       console.log(pc.gray('--- File Content ---'));
       console.log(formatCodeForTerminal(args.content, p));
       console.log(pc.gray('--------------------'));
+
+    } else if (normalizedName === "patch_file") {
+      const p = args.path;
+      const fullPath = sanitizePath(activeRoot, p);
+      if (!fs.existsSync(fullPath)) {
+        throw new Error(`File not found: ${p}`);
+      }
+
+      let fileContent = fs.readFileSync(fullPath, "utf-8");
+      let diffOutput = "";
+      let terminalDiff = "";
+
+      for (const patch of args.patches) {
+        const { search, replace } = patch;
+        if (!fileContent.includes(search)) {
+          throw new Error(`Patch failed: Could not find exact match for search block in ${p}`);
+        }
+        
+        // Check if there's more than one occurrence to avoid ambiguity
+        const occurrences = fileContent.split(search).length - 1;
+        if (occurrences > 1) {
+          throw new Error(`Patch failed: Search block is ambiguous, found ${occurrences} occurrences in ${p}`);
+        }
+
+        fileContent = fileContent.replace(search, replace);
+        diffOutput += generateDiff(p, search, replace, false);
+        terminalDiff += generateDiff(p, search, replace, true);
+      }
+
+      fs.writeFileSync(fullPath, fileContent);
+      content = { result: `Success: Patched ${p}\n\n${diffOutput}` };
+      
+      logInstruction(chatId, 'PATCH', p);
+      console.log(pc.gray('--- Patch Diff ---'));
+      console.log(terminalDiff.trim());
+      console.log(pc.gray('------------------'));
 
     } else if (normalizedName === "read_file") {
       const p = args.path;
