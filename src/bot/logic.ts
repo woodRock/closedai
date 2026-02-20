@@ -7,6 +7,7 @@ import { bot } from './instance.js';
 import { logInstruction } from '../utils/logger.js';
 import { handleSystemCommands } from './commands.js';
 import { executeTool } from '../tools/index.js';
+import { getConfig } from '../utils/config.js';
 
 const MAX_MESSAGE_LENGTH = 4000;
 
@@ -27,19 +28,24 @@ export async function safeSendMessage(chatId: number, text: string) {
   }
 }
 
-async function generateCommitMessage(diff: string): Promise<string> {
+async function generateCommitMessage(diff: string, chatId: number): Promise<string> {
+  if (!diff || diff.trim().length === 0) {
+    return "ClosedAI: Minor updates";
+  }
   try {
-    const messageModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    const config = getConfig();
+    const messageModel = genAI.getGenerativeModel({ model: config.model.name || "gemini-1.5-flash" });
     const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
 Do not use markdown formatting. Return ONLY the commit message text.
 
 Diff:
-${diff.substring(0, 10000)}`;
+${diff.substring(0, 15000)}`;
     const result = await messageModel.generateContent(prompt);
     const text = result.response.text().trim();
-    return text.replace(/^["']|["']$/g, '');
-  } catch (error) {
-    console.error('Error generating commit message:', error);
+    if (!text) throw new Error("Empty response from Gemini");
+    return text.replace(/^["']|["']$/g, '').replace(/^Commit:\s*/i, '');
+  } catch (error: any) {
+    logInstruction(chatId, 'ERROR', `Error generating commit message: ${error.message}`);
     return "ClosedAI: Automatic update";
   }
 }
@@ -334,7 +340,7 @@ Ready to assist.`;
           
           execSync('git add .', { cwd: repoRoot });
           const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
-          const commitMsg = await generateCommitMessage(diff);
+          const commitMsg = await generateCommitMessage(diff, chatId);
           execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: repoRoot });
           
           if (statusMsg) {
