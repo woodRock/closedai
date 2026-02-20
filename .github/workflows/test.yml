@@ -1,21 +1,25 @@
-name: Tests
+name: ClosedAI Bot
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+  schedule:
+    - cron: '*/5 * * * *' # Runs every 5 minutes
+  workflow_dispatch:      # Allows manual triggering
 
 jobs:
-  test:
+  run-bot:
     runs-on: ubuntu-latest
-
+    permissions:
+      contents: write # Required for the bot to push changes back
     steps:
-    - uses: actions/checkout@v4
-    - name: Use Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-node-version: '20'
-        cache: 'npm'
-    - run: npm ci
-    - run: npm test
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Fetch all history for all branches and tags
+
+      - name: Run ClosedAI Action
+        uses: woodRock/closedai@main
+        with:
+          telegram_bot_token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          firebase_service_account: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          allowed_user_ids: ${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}
