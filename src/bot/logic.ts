@@ -29,7 +29,7 @@ export async function safeSendMessage(chatId: number, text: string) {
 
 async function generateCommitMessage(diff: string): Promise<string> {
   try {
-    const messageModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
+    const messageModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
 Do not use markdown formatting. Return ONLY the commit message text.
 
@@ -330,16 +330,27 @@ Ready to assist.`;
       try {
         const status = execSync('git status --porcelain', { cwd: repoRoot }).toString();
         if (status.length > 0) {
+          const statusMsg = await safeSendMessage(chatId, "📦 *Committing changes...*");
+          
           execSync('git add .', { cwd: repoRoot });
           const diff = execSync('git diff --cached', { cwd: repoRoot }).toString();
           const commitMsg = await generateCommitMessage(diff);
           execSync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`, { cwd: repoRoot });
           
-          // Use --force-with-lease and push to origin HEAD to be safe and ensure it works in Actions
+          if (statusMsg) {
+            await bot.telegram.editMessageText(chatId, statusMsg.message_id, undefined, "🚀 *Pushing to GitHub...*", { parse_mode: 'Markdown' }).catch(() => {});
+          }
+
           execSync(`git push origin HEAD`, { cwd: repoRoot });
           
           logInstruction(chatId, 'SHELL', `Git push completed: ${commitMsg}`);
-          await safeSendMessage(chatId, `✅ *Changes committed & pushed:* ${commitMsg}`);
+          const finalMsg = `✅ *Changes committed & pushed:*\n\`${commitMsg}\``;
+          
+          if (statusMsg) {
+             await bot.telegram.editMessageText(chatId, statusMsg.message_id, undefined, finalMsg, { parse_mode: 'Markdown' }).catch(() => safeSendMessage(chatId, finalMsg));
+          } else {
+             await safeSendMessage(chatId, finalMsg);
+          }
         }
       } catch (e: any) {
         logInstruction(chatId, 'ERROR', `Git operation failed: ${e.message}`);
