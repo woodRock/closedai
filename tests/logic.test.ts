@@ -3,7 +3,7 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { processOneMessage, checkQueue } from '../src/bot/logic';
 import { db } from '../src/services/firebase';
-import { model } from '../src/services/gemini';
+import { model, genAI } from '../src/services/gemini';
 import { bot } from '../src/bot/instance';
 
 vi.mock('../src/services/firebase', () => {
@@ -37,6 +37,15 @@ vi.mock('../src/services/gemini', () => ({
   model: {
     generateContentStream: vi.fn(),
   },
+  genAI: {
+    getGenerativeModel: vi.fn().mockReturnValue({
+      generateContent: vi.fn().mockResolvedValue({
+        response: {
+          text: () => 'Mock commit message'
+        }
+      })
+    })
+  }
 }));
 
 vi.mock('../src/bot/instance', () => ({

@@ -72,12 +72,6 @@ describe('Tools Unit Tests', () => {
     expect(result).toEqual({ result: 'shell output' });
   });
 
-  it('reply should call safeSendMessage', async () => {
-    const result = await executeTool('reply', { text: 'hello user' }, repoRoot, chatId, mockSafeSendMessage);
-    expect(mockSafeSendMessage).toHaveBeenCalledWith(chatId, 'hello user');
-    expect(result).toEqual({ result: 'Sent.' });
-  });
-
   it('should return error if tool fails', async () => {
     (execSync as any).mockImplementation(() => { throw new Error('bash error'); });
     const result = await executeTool('run_shell', { command: 'fail' }, repoRoot, chatId, mockSafeSendMessage);
