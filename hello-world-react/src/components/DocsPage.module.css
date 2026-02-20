@@ -28,3 +28,12 @@ body {
 .animate-pulse-slow {
   animation: pulse-slow 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+.reveal {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: all 1s ease-out;
+}
+.active {
+  opacity: 1 !important;
+  transform: translateY(0) !important;
+}
