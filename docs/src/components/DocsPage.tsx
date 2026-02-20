@@ -116,10 +116,10 @@ const DocsPage: React.FC = () => {
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- name: Run ClosedAI<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;uses: woodRock/closedai@main<br/>
                   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;with:<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: ${'{'}{ secrets.TELEGRAM_BOT_TOKEN }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: ${'{'}{ secrets.GEMINI_API_KEY }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: ${'{'}{ secrets.FIREBASE_SERVICE_ACCOUNT }{'}'}<br/>
-                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: ${'{'}{ secrets.ALLOWED_TELEGRAM_USER_IDS }{'}'}
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;telegram_bot_token: {'${{ secrets.TELEGRAM_BOT_TOKEN }}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;gemini_api_key: {'${{ secrets.GEMINI_API_KEY }}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;firebase_service_account: {'${{ secrets.FIREBASE_SERVICE_ACCOUNT }}'}<br/>
+                  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;allowed_user_ids: {'${{ secrets.ALLOWED_TELEGRAM_USER_IDS }}'}
                 </div>
               </div>
             </div>
