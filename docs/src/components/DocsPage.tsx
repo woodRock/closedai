@@ -198,7 +198,7 @@ jobs:
               </div>
             </div>
           </div>
-          <div className={`${styles['mt-16']} ${styles['text-center']}`}>
+          <div className={`${styles['mt-24']} ${styles['text-center']}`}>
             <a href="https://github.com/marketplace/actions/closedai-devops-on-autopilot" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
               View on Marketplace
             </a>
