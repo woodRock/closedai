@@ -124,7 +124,7 @@ jobs:
             </div>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
               <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>2. Gemini API Key</h3>
-              <p className={styles['text-gray-400']}>Get a free API key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Google AI Studio</a>. ClosedAI uses Gemini 1.5 Flash for high efficiency.</p>
+              <p className={styles['text-gray-400']}>Get a free API key from <a href="https://aistudio.google.com/" target="_blank" rel="noopener noreferrer" className={styles['text-blue-400']}>Google AI Studio</a>. ClosedAI uses Gemini 3 Flash for high efficiency.</p>
             </div>
             <div className={`${styles.glass} ${styles['p-8']} ${styles['rounded-2xl']}`}>
               <h3 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']} ${styles['mb-4']}`}>3. Firebase Setup</h3>
@@ -222,7 +222,7 @@ jobs:
                 <i className={`${styles['text-white']} fas fa-brain`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Advanced Reasoning</h3>
-              <p className={styles['text-gray-400']}>Powered by Gemini 1.5 Flash, capable of understanding complex project structures and codebases.</p>
+              <p className={styles['text-gray-400']}>Powered by Gemini 3 Flash, capable of understanding complex project structures and codebases.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
