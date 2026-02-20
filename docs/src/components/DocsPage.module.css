@@ -285,6 +285,18 @@ code {
   font-size: 0.9em;
 }
 
+.code-block {
+  font-family: 'JetBrains Mono', monospace;
+  background: #000000;
+  padding: 1rem;
+  border-radius: 0.75rem;
+  color: #d1d5db;
+  font-size: 0.875rem;
+  margin-top: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  overflow-x: auto;
+}
+
 ul {
   list-style: none;
   padding: 0;

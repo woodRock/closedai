@@ -135,7 +135,6 @@ const DocsPage: React.FC = () => {
               <ul className={`${styles['space-y-2']} ${styles['text-gray-400']}`}>
                 <li><code>run_shell</code>: Execute arbitrary shell commands</li>
                 <li><code>search_repo</code>: Recursive grep search</li>
-                <li><code>reply</code>: Send status updates to Telegram</li>
               </ul>
             </div>
           </div>
@@ -195,22 +194,38 @@ const DocsPage: React.FC = () => {
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
               <div className={styles['step-number']}>1</div>
               <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Fork the Repository</h4>
+                <p className={`${styles['text-gray-400']} ${styles['mb-4']}`}>Start by creating your own copy of the ClosedAI repository.</p>
+                <a href="https://github.com/woodRock/closedai/fork" target="_blank" rel="noopener noreferrer" className={styles['btn-secondary']} style={{ padding: '0.75rem 1.5rem', fontSize: '1rem' }}>
+                   Fork Repository
+                </a>
+              </div>
+            </div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>2</div>
+              <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Telegram Bot</h4>
                 <p className={styles['text-gray-400']}>Message @BotFather to get your API token.</p>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>2</div>
+              <div className={styles['step-number']}>3</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Get Gemini Key</h4>
                 <p className={styles['text-gray-400']}>Generate an API key from Google AI Studio.</p>
               </div>
             </div>
             <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
-              <div className={styles['step-number']}>3</div>
+              <div className={styles['step-number']}>4</div>
               <div>
                 <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
-                <p className={styles['text-gray-400']}>Add tokens to your GitHub Repository Secrets.</p>
+                <p className={styles['text-gray-400']}>Add tokens to your GitHub Repository Secrets. Use the setup script to help you gather the necessary IDs:</p>
+                <div className={styles['code-block']}>
+                  git clone https://github.com/YOUR_USERNAME/closedai.git<br/>
+                  cd closedai<br/>
+                  npm install<br/>
+                  npm run setup
+                </div>
               </div>
             </div>
           </div>
