@@ -41,7 +41,7 @@ const DocsPage: React.FC = () => {
                 />
               </svg>
             </div>
-            <span className="text-xl font-bold tracking-tighter">ClosedAI</span>
+            <span className="text-xl font-bold tracking-tighter text-white">ClosedAI</span>
           </div>
           <div className="hidden md:flex items-center space-x-8 text-sm font-medium text-gray-400">
             <a href="#features" className="hover:text-white transition">
@@ -70,7 +70,7 @@ const DocsPage: React.FC = () => {
       <section className={`relative pt-48 pb-32 overflow-hidden ${styles.reveal}`}>
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] -z-10"></div>
         <div className="max-w-7xl mx-auto px-6 text-center">
-          <h1 className="text-7xl md:text-9xl font-extrabold tracking-tighter mb-8 leading-tight">
+          <h1 className="text-7xl md:text-9xl font-extrabold tracking-tighter mb-8 leading-tight text-white">
             DevOps on <br />
             <span className={styles['gradient-text']}>Autopilot.</span>
           </h1>
@@ -112,31 +112,64 @@ const DocsPage: React.FC = () => {
                     GitHub Action Active
                   </div>
                 </div>
-                <div className="p-10 text-left font-mono text-sm leading-relaxed">
-                  <div className="mb-6">
-                    <span className="text-blue-400 font-bold">Telegram:</span>
-                    <span className="text-gray-300 ml-2">
-                      "Hey ClosedAI, refactor bot.ts to use async/await properly."
-                    </span>
+                
+                <div className="p-8 text-left font-mono text-sm leading-relaxed overflow-x-auto">
+                  <div className="mb-6 flex items-center justify-between">
+                    <div>
+                      <span className="text-blue-400 font-bold">Telegram:</span>
+                      <span className="text-gray-300 ml-2">"Update the app entry point"</span>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <div className="flex items-center space-x-3 text-purple-400">
-                      <i className="fas fa-cog animate-spin text-xs"></i>
-                      <span>ClosedAI is analyzing repository...</span>
+                  
+                  <div className="space-y-4">
+                    <div className="flex items-center space-x-2 text-yellow-500/80">
+                      <i className="fas fa-terminal text-xs"></i>
+                      <span className="text-[10px] font-bold uppercase tracking-wider">Executing: write_file</span>
                     </div>
-                    <div className="text-gray-500 ml-6">
-                      Checking .github/workflows/closedai.yml...
+
+                    <div className="bg-black/40 rounded-xl border border-white/10 overflow-hidden">
+                      <div className="bg-white/5 px-4 py-2 border-b border-white/5 flex justify-between items-center">
+                        <span className="text-[10px] text-gray-400">src/main.tsx</span>
+                      </div>
+                      <div className="p-4 text-[12px] leading-6 font-mono whitespace-pre">
+                        <div className="flex">
+                          <span className="text-gray-600 w-6 mr-4 text-right select-none">1</span>
+                          <span><span className="text-purple-400">import</span> React <span className="text-purple-400">from</span> <span className="text-green-400">'react'</span></span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-gray-600 w-6 mr-4 text-right select-none">2</span>
+                          <span><span className="text-purple-400">import</span> {'{'} createRoot {'}'} <span className="text-purple-400">from</span> <span className="text-green-400">'react-dom/client'</span></span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-gray-600 w-6 mr-4 text-right select-none">3</span>
+                          <span><span className="text-purple-400">import</span> App <span className="text-purple-400">from</span> <span className="text-green-400">'./App'</span></span>
+                        </div>
+                        <div className="flex">
+                          <span className="text-gray-600 w-6 mr-4 text-right select-none">4</span>
+                          <span></span>
+                        </div>
+                        <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
+                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">5</span>
+                          <span><span className="text-blue-400">createRoot</span>(document.<span className="text-yellow-300">getElementById</span>(<span className="text-green-400">'root'</span>)!).<span className="text-yellow-300">render</span>(</span>
+                        </div>
+                        <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
+                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">6</span>
+                          <span>  &lt;<span className="text-blue-400">App</span> /&gt;</span>
+                        </div>
+                        <div className="flex bg-blue-500/10 -mx-4 px-4 border-l-2 border-blue-500">
+                          <span className="text-blue-400/50 w-6 mr-4 text-right select-none">7</span>
+                          <span>);</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-gray-500 ml-6">Reading bot.ts...</div>
-                    <div className="text-green-400 ml-6 mt-4">
-                      ✔ Applied 3 refactors
-                    </div>
-                    <div className="text-green-400 ml-6">✔ Ran npm test (Passed)</div>
-                    <div className="text-green-400 ml-6">
-                      ✔ Committed & Pushed to main
+
+                    <div className="flex items-center space-x-2 text-green-400">
+                      <i className="fas fa-check-circle text-xs"></i>
+                      <span className="text-xs">Successfully updated src/main.tsx</span>
                     </div>
                   </div>
                 </div>
+
               </div>
             </div>
           </div>
@@ -147,7 +180,7 @@ const DocsPage: React.FC = () => {
       <section id="how-it-works" className={`py-32 px-6 ${styles.reveal}`}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-20">
-            <h2 className="text-4xl font-extrabold mb-4">How it works</h2>
+            <h2 className="text-4xl font-extrabold mb-4 text-white">How it works</h2>
             <p className="text-gray-400 text-lg">
               A seamless loop between your phone and your production code.
             </p>
@@ -157,38 +190,38 @@ const DocsPage: React.FC = () => {
               {/* Connectors (Desktop) */}
               <div className="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-gradient-to-r from-transparent via-blue-500/20 to-transparent -translate-y-1/2 -z-10"></div>
 
-              <div className={`glass p-8 rounded-3xl text-center ${styles.glass}`}>
+              <div className={`p-8 rounded-3xl text-center ${styles.glass}`}>
                 <div className="w-12 h-12 bg-blue-500/20 text-blue-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">
                   1
                 </div>
-                <h4 className="font-bold mb-2">Telegram</h4>
+                <h4 className="font-bold mb-2 text-white">Telegram</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   You send a command via Telegram bot.
                 </p>
               </div>
-              <div className={`glass p-8 rounded-3xl text-center ${styles.glass}`}>
+              <div className={`p-8 rounded-3xl text-center ${styles.glass}`}>
                 <div className="w-12 h-12 bg-purple-500/20 text-purple-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">
                   2
                 </div>
-                <h4 className="font-bold mb-2">Firestore</h4>
+                <h4 className="font-bold mb-2 text-white">Firestore</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Message is securely stored and queued.
                 </p>
               </div>
-              <div className={`glass p-8 rounded-3xl text-center border-blue-500/40 shadow-lg shadow-blue-500/10 ${styles.glass}`}>
+              <div className={`p-8 rounded-3xl text-center border-blue-500/40 shadow-lg shadow-blue-500/10 ${styles.glass}`}>
                 <div className="w-12 h-12 bg-white/10 text-white rounded-full flex items-center justify-center mx-auto mb-6 font-bold">
                   3
                 </div>
-                <h4 className="font-bold mb-2">GitHub Action</h4>
+                <h4 className="font-bold mb-2 text-white">GitHub Action</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Workflow wakes up, pulls the message, and executes.
                 </p>
               </div>
-              <div className={`glass p-8 rounded-3xl text-center ${styles.glass}`}>
+              <div className={`p-8 rounded-3xl text-center ${styles.glass}`}>
                 <div className="w-12 h-12 bg-green-500/20 text-green-400 rounded-full flex items-center justify-center mx-auto mb-6 font-bold">
                   4
                 </div>
-                <h4 className="font-bold mb-2">Git Push</h4>
+                <h4 className="font-bold mb-2 text-white">Git Push</h4>
                 <p className="text-xs text-gray-500 leading-relaxed">
                   Changes are committed and pushed back to your repo.
                 </p>
@@ -205,7 +238,7 @@ const DocsPage: React.FC = () => {
                 <div className="w-14 h-14 bg-blue-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-blue-500/30">
                   <i className="fas fa-piggy-bank text-white"></i>
                 </div>
-                <h3 className="text-2xl font-bold">Zero Overhead</h3>
+                <h3 className="text-2xl font-bold text-white">Zero Overhead</h3>
                 <p className="text-gray-400 leading-relaxed text-lg">
                   Forget about AWS, Heroku, or DigitalOcean. ClosedAI runs within
                   the generous free tier of GitHub Actions.
@@ -215,7 +248,7 @@ const DocsPage: React.FC = () => {
                 <div className="w-14 h-14 bg-purple-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-purple-500/30">
                   <i className="fas fa-brain text-white"></i>
                 </div>
-                <h3 className="text-2xl font-bold">Powered by Gemini</h3>
+                <h3 className="text-2xl font-bold text-white">Powered by Gemini</h3>
                 <p className="text-gray-400 leading-relaxed text-lg">
                   Uses Google's Gemini 3 Flash to understand context, write
                   high-quality code, and debug complex issues.
@@ -225,7 +258,7 @@ const DocsPage: React.FC = () => {
                 <div className="w-14 h-14 bg-pink-500 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-pink-500/30">
                   <i className="fas fa-shield-virus text-white"></i>
                 </div>
-                <h3 className="text-2xl font-bold">Sandboxed & Secure</h3>
+                <h3 className="text-2xl font-bold text-white">Sandboxed & Secure</h3>
                 <p className="text-gray-400 leading-relaxed text-lg">
                   Runs in a clean, isolated environment for every task. Only you
                   have the keys to your Kingdom.
@@ -237,9 +270,9 @@ const DocsPage: React.FC = () => {
 
         {/* Setup */}
         <section id="setup" className={`py-32 px-6 ${styles.reveal}`}>
-          <div className={`max-w-4xl mx-auto glass p-12 rounded-[3rem] relative overflow-hidden ${styles.glass}`}>
+          <div className={`max-w-4xl mx-auto p-12 rounded-[3rem] relative overflow-hidden ${styles.glass}`}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
-            <h2 className="text-4xl font-bold mb-12 text-center">
+            <h2 className="text-4xl font-bold mb-12 text-center text-white">
               Ready to start?
             </h2>
 
@@ -318,7 +351,7 @@ const DocsPage: React.FC = () => {
                   </span>
                   <span>Real-time Response</span>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-extrabold mb-8">
+                <h2 className="text-4xl md:text-5xl font-extrabold mb-8 text-white">
                   ⚡ Instant Mode
                 </h2>
                 <p className="text-xl text-gray-400 leading-relaxed mb-8">
@@ -357,11 +390,11 @@ const DocsPage: React.FC = () => {
               </div>
 
               <div className="flex-1 w-full">
-                <div className={`glass p-8 rounded-[2.5rem] border-white/10 shadow-2xl overflow-hidden relative ${styles.glass}`}>
+                <div className={`p-8 rounded-[2.5rem] border-white/10 shadow-2xl overflow-hidden relative ${styles.glass}`}>
                   <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <i className="fas fa-microchip text-8xl"></i>
+                    <i className="fas fa-microchip text-8xl text-white"></i>
                   </div>
-                  <h4 className="text-xl font-bold mb-6 flex items-center">
+                  <h4 className="text-xl font-bold mb-6 flex items-center text-white">
                     <i className="fas fa-terminal mr-3 text-blue-500"></i>
                     Self-Host Guide
                   </h4>
@@ -371,8 +404,8 @@ const DocsPage: React.FC = () => {
                         1. Clone &amp; Install
                       </p>
                       <div className="bg-black/60 rounded-xl p-4 font-mono text-sm text-blue-300 border border-white/5">
-                        git clone https://github.com/woodrock/closedai.git&lt;br /&gt;
-                        cd closedai &amp;&amp; npm install
+                        git clone https://github.com/woodrock/closedai.git<br />
+                        cd closedai && npm install
                       </div>
                     </div>
                     <div>
@@ -410,7 +443,7 @@ const DocsPage: React.FC = () => {
           <div className="w-8 h-8 bg-gradient-to-tr from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <i className="fas fa-bolt text-white text-xs"></i>
           </div>
-          <span className="text-xl font-bold tracking-tighter">ClosedAI</span>
+          <span className="text-xl font-bold tracking-tighter text-white">ClosedAI</span>
         </div>
         <p className="text-gray-500 text-sm mb-8">
           Empowering developers with autonomous Git workflows.
