@@ -77,7 +77,13 @@ async function getChatHistory(chatId: number, limit = 20) {
   return history;
 }
 
-export async function processOneMessage(userMessage: string, chatId: number, repoRoot: string, messageId?: string) {
+export async function processOneMessage(
+  userMessage: string, 
+  chatId: number, 
+  repoRoot: string, 
+  messageId?: string,
+  image?: { data: string, mimeType: string } // data is base64 string
+) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
     await safeSendMessage(chatId, "🛡️ Access Denied.");
@@ -111,19 +117,29 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
     }
   }
 
+  const userParts: any[] = [{ text: userMessage || (image ? "Explain this image." : "") }];
+  if (image) {
+    userParts.push({
+      inlineData: {
+        data: image.data,
+        mimeType: image.mimeType
+      }
+    });
+  }
+
   await db.collection('history').add({
     chatId,
     role: 'user',
-    parts: [{ text: userMessage }],
+    parts: userParts,
     timestamp: FieldValue.serverTimestamp()
   });
 
-  if (userMessage.startsWith('/')) {
+  if (userMessage && userMessage.startsWith('/')) {
     const handled = await handleSystemCommands(userMessage, chatId, repoRoot, safeSendMessage);
     if (handled) return;
   }
 
-  logInstruction(chatId, 'GEMINI', `Processing: ${userMessage.substring(0, 50)}${userMessage.length > 50 ? '...' : ''}`);
+  logInstruction(chatId, 'GEMINI', `Processing: ${userMessage ? userMessage.substring(0, 50) : 'Image'}${userMessage && userMessage.length > 50 ? '...' : ''}`);
   
   try {
     execSync('git config user.name "ClosedAI Bot"', { cwd: repoRoot });
@@ -157,7 +173,7 @@ Ready to assist.`;
     ...geminiHistory
   ];
 
-  currentHistory.push({ role: 'user', parts: [{ text: userMessage }] });
+  currentHistory.push({ role: 'user', parts: userParts });
 
   try {
     logInstruction(chatId, 'GEMINI', 'Starting interaction...');
@@ -304,6 +320,7 @@ Ready to assist.`;
       await db.collection('queue').add({
         chatId,
         userMessage,
+        image,
         status: 'pending',
         createdAt: FieldValue.serverTimestamp()
       });
@@ -325,7 +342,7 @@ export async function checkQueue(repoRoot: string) {
   const data = doc.data();
   await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
   try {
-    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id);
+    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.image);
   } catch (err) {
     await doc.ref.update({ status: 'pending' }).catch(() => {});
   }

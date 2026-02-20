@@ -25,6 +25,21 @@ bot.catch((err: any) => {
   logInstruction(0, 'ERROR', `Telegraf error: ${msg}`);
 });
 
+async function downloadImage(fileId: string) {
+  try {
+    const link = await bot.telegram.getFileLink(fileId);
+    const response = await fetch(link.href);
+    const buffer = await response.arrayBuffer();
+    return {
+      data: Buffer.from(buffer).toString('base64'),
+      mimeType: response.headers.get('content-type') || 'image/jpeg'
+    };
+  } catch (e) {
+    console.error("Failed to download image:", e);
+    return undefined;
+  }
+}
+
 async function run() {
   const isPolling = process.argv.includes('--poll');
   const repoRoot = process.cwd();
@@ -84,8 +99,17 @@ async function run() {
     }, 60000);
 
     bot.on('message', async (ctx) => {
-      if (ctx.message && 'text' in ctx.message) {
-        await processOneMessage(ctx.message.text, ctx.chat.id, repoRoot).catch(console.error);
+      const msg = ctx.message as any;
+      let text = msg.text || msg.caption || '';
+      let image = undefined;
+
+      if (msg.photo) {
+        const photo = msg.photo[msg.photo.length - 1];
+        image = await downloadImage(photo.file_id);
+      }
+
+      if (text || image) {
+        await processOneMessage(text, ctx.chat.id, repoRoot, undefined, image).catch(console.error);
       }
     });
 
@@ -115,12 +139,22 @@ async function run() {
 
     const updates = await bot.telegram.getUpdates(0, 100, lastUpdateId + 1, ['message']);
     for (const update of updates) {
-      if ('message' in update && update.message && 'text' in (update.message as any)) {
+      if ('message' in update) {
         const message = update.message as any;
-        try {
-          await processOneMessage(message.text, message.chat.id, repoRoot);
-        } catch (err) {
-          console.error("Error processing message:", err);
+        let text = message.text || message.caption || '';
+        let image = undefined;
+
+        if (message.photo) {
+          const photo = message.photo[message.photo.length - 1];
+          image = await downloadImage(photo.file_id);
+        }
+
+        if (text || image) {
+          try {
+            await processOneMessage(text, message.chat.id, repoRoot, undefined, image);
+          } catch (err) {
+            console.error("Error processing message:", err);
+          }
         }
         lastUpdateId = update.update_id;
         // Update immediately to avoid repeating on crash
