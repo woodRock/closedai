@@ -33,8 +33,8 @@ async function generateCommitMessage(diff: string, chatId: number): Promise<stri
     return "ClosedAI: Minor updates";
   }
   try {
-    const config = getConfig();
-    const messageModel = genAI.getGenerativeModel({ model: config.model.name || "gemini-1.5-flash" });
+    // User requested gemini-3-flash-preview specifically for commit messages
+    const messageModel = genAI.getGenerativeModel({ model: "gemini-3-flash-preview" });
     const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
 Do not use markdown formatting. Return ONLY the commit message text.
 
@@ -370,7 +370,20 @@ Ready to assist.`;
 
   } catch (error: any) {
     logInstruction(chatId, 'ERROR', `Error: ${error.message}`);
-    if ((error.status === 503 || error.message?.includes('503')) && !messageId) {
+    
+    // Broaden error detection for overloaded/503/504 errors
+    const isOverloaded = 
+      error.status === 503 || 
+      error.status === 504 ||
+      error.status === 429 ||
+      error.message?.includes('503') || 
+      error.message?.includes('504') ||
+      error.message?.includes('429') ||
+      error.message?.toLowerCase().includes('overloaded') ||
+      error.message?.toLowerCase().includes('service unavailable') ||
+      error.message?.toLowerCase().includes('deadline exceeded');
+
+    if (isOverloaded && !messageId) {
       await db.collection('queue').add({
         chatId,
         userMessage,
@@ -378,7 +391,7 @@ Ready to assist.`;
         status: 'pending',
         createdAt: FieldValue.serverTimestamp()
       });
-      await safeSendMessage(chatId, "⏳ Gemini is overloaded. Your request has been queued and will be retried automatically.");
+      await safeSendMessage(chatId, "⏳ Gemini is overloaded or unavailable. Your request has been queued and will be retried automatically.");
     } else {
       await safeSendMessage(chatId, "❌ Error: " + error.message);
     }
