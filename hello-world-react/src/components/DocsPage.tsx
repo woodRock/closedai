@@ -92,21 +92,21 @@ const DocsPage: React.FC = () => {
           <div className={`${styles.grid} ${styles.md_grid_cols_3} ${styles['gap-12']}`}>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-blue-600']}`}>
-                <i className="fas fa-piggy-bank text-white"></i>
+                <i className={`${styles['text-white']} fas fa-piggy-bank`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Zero Overhead</h3>
               <p className={styles['text-gray-400']}>Runs within the generous free tier of GitHub Actions. No servers to maintain.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-purple-500']}`}>
-                <i className="fas fa-brain text-white"></i>
+                <i className={`${styles['text-white']} fas fa-brain`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Powered by Gemini</h3>
               <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code with massive context windows.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
-                <i className="fas fa-shield-virus text-white"></i>
+                <i className={`${styles['text-white']} fas fa-shield-virus`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Sandboxed</h3>
               <p className={styles['text-gray-400']}>Isolated environment for every task. Your main environment stays clean and safe.</p>
@@ -184,16 +184,16 @@ const DocsPage: React.FC = () => {
                 Don't want to wait for GitHub Actions? Run the bot locally or on a private server for sub-second response times.
               </p>
               <ul className={`${styles['space-y-4']} ${styles['text-gray-300']} ${styles['mb-8']}`}>
-                <li className={`${styles.flex} ${styles['gap-3']}`}>
-                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
+                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
                   <span>Real-time polling for instant updates</span>
                 </li>
-                <li className={`${styles.flex} ${styles['gap-3']}`}>
-                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
+                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
                   <span>Zero cold-start latency</span>
                 </li>
-                <li className={`${styles.flex} ${styles['gap-3']}`}>
-                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                <li className={`${styles.flex} ${styles['gap-3']} ${styles['items-start']}`}>
+                  <i className={`fas fa-check-circle ${styles['text-green-400']} ${styles['mt-1']} ${styles['flex-shrink-0']}`}></i>
                   <span>Full control over the execution environment</span>
                 </li>
               </ul>
