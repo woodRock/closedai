@@ -203,8 +203,20 @@ Ready to assist.`;
 
       const result = await model.generateContentStream({ contents: currentHistory });
 
+      // Collect thought signatures manually because the SDK aggregator strips them
+      const signatures: (string | undefined)[] = [];
+
       for await (const chunk of result.stream) {
         try {
+          // Track signatures in this chunk
+          const chunkParts = chunk.candidates?.[0]?.content?.parts;
+          if (chunkParts) {
+            for (const part of chunkParts) {
+              const sig = (part as any).thought_signature || (part as any).thoughtSignature;
+              signatures.push(sig);
+            }
+          }
+
           const text = chunk.text();
           if (text) {
             fullText += text;
@@ -223,6 +235,25 @@ Ready to assist.`;
 
       const response = await result.response;
       const modelTurnParts = response.candidates?.[0]?.content?.parts || [];
+
+      // Restore missing signatures to fix SDK aggregator bug
+      // Gemini 3 REQUIRES thought_signature for function calls.
+      if (modelTurnParts.length > 0) {
+        for (let i = 0; i < modelTurnParts.length; i++) {
+          const part = modelTurnParts[i] as any;
+          
+          // Try to restore from collected signatures
+          if (signatures[i]) {
+            part.thought_signature = signatures[i];
+          }
+          
+          // Fallback: If it's a function call and still missing signature, use a dummy one
+          // as recommended by Google docs for "context engineering" or bypassing validation.
+          if (part.functionCall && !part.thought_signature) {
+            part.thought_signature = "skip_thought_signature_validator";
+          }
+        }
+      }
 
       if (modelTurnParts.length > 0) {
         // Save to history and update local history
