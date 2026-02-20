@@ -213,6 +213,10 @@ Ready to assist.`;
     let turn = 0;
 
     while (turn < 10) {
+      const turnNumber = turn + 1;
+      const turnIndicator = `🔄 *Turn ${turnNumber}/10*`;
+      await safeSendMessage(chatId, turnIndicator);
+
       let fullText = '';
       let telegramMessage: any = null;
       let lastSentLength = 0;
