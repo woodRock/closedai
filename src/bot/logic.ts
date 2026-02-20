@@ -65,7 +65,7 @@ async function getChatHistory(chatId: number, limit = 20) {
     const hasFunctionCall = parts.some((p: any) => p.functionCall);
 
     if (hasFunctionResponse) {
-      role = 'function';
+      role = 'user'; // Changed from 'function' for Gemini 3 compatibility
     } else if (hasFunctionCall || role === 'model') {
       role = 'model';
     } else {
@@ -262,11 +262,11 @@ Ready to assist.`;
       // Save tool responses and update local history
       await db.collection('history').add({
         chatId,
-        role: 'function',
+        role: 'user', // Changed from 'function'
         parts: functionResponses,
         timestamp: FieldValue.serverTimestamp()
       });
-      currentHistory.push({ role: 'function', parts: functionResponses });
+      currentHistory.push({ role: 'user', parts: functionResponses });
 
       turn++;
       logInstruction(chatId, 'GEMINI', `Turn ${turn}/10 completed. Requesting next step...`);
