@@ -9,7 +9,8 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Required for the bot to push changes back
+      contents: write  # Required for the bot to push changes back
+      workflows: write # Required if the bot modifies files in .github/workflows/
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
