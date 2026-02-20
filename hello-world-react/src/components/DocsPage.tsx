@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import styles from './DocsPage.module.css';
 
 const DocsPage: React.FC = () => {
@@ -8,7 +8,7 @@ const DocsPage: React.FC = () => {
       reveals.forEach(el => {
         const windowHeight = window.innerHeight;
         const elementTop = el.getBoundingClientRect().top;
-        const elementVisible = 150;
+        const elementVisible = 100;
         if (elementTop < windowHeight - elementVisible) {
           el.classList.add(styles.active);
         }
@@ -33,12 +33,12 @@ const DocsPage: React.FC = () => {
             </div>
             <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
           </div>
-          <div className={`${styles.hidden} ${styles.md_flex} ${styles.flex} ${styles['items-center']} ${styles['space-x-8']} ${styles['text-sm']} ${styles['font-medium']} ${styles['text-gray-400']}`}>
+          <div className={`${styles.md_flex} ${styles.hidden} ${styles['items-center']} ${styles['space-x-8']} ${styles['text-sm']} ${styles['font-medium']}`}>
             <a href="#features" className={styles['text-gray-400']}>Features</a>
             <a href="#how-it-works" className={styles['text-gray-400']}>Workflow</a>
             <a href="#setup" className={styles['text-gray-400']}>Setup</a>
             <a href="#instant-mode" className={styles['text-gray-400']}>Instant Mode</a>
-            <a href="https://github.com/woodRock/closedai" className={styles['btn-github']}>Star on GitHub</a>
+            <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-github']}>Star on GitHub</a>
           </div>
         </div>
       </nav>
@@ -47,7 +47,7 @@ const DocsPage: React.FC = () => {
       <section className={`${styles.relative} ${styles['pt-48']} ${styles['pb-32']} ${styles.reveal}`}>
         <div className={`${styles.absolute} ${styles['hero-glow']}`}></div>
         <div className={`${styles['max-w-7xl']} ${styles['px-6']} ${styles['text-center']}`}>
-          <h1 className={`${styles['text-7xl']} ${styles['md:text-9xl']} ${styles['font-extrabold']} ${styles['mb-8']} ${styles['text-white']}`}>
+          <h1 className={`${styles['text-7xl']} ${styles.md_text_9xl} ${styles['font-extrabold']} ${styles['mb-8']} ${styles['text-white']}`}>
             DevOps on <br />
             <span className={styles['gradient-text']}>Autopilot.</span>
           </h1>
@@ -57,10 +57,10 @@ const DocsPage: React.FC = () => {
             Build, refactor, and manage your entire codebase via Telegram.
           </p>
           <div className={`${styles.flex} ${styles['justify-center']} ${styles['gap-6']} ${styles['mb-24']}`}>
-            <a href="#setup" className={`${styles['bg-blue-600']} ${styles['text-white']} ${styles['px-12']} ${styles['py-5']} ${styles['rounded-2xl']} ${styles['text-xl']} ${styles['font-bold']}`}>
+            <a href="#setup" className={styles['btn-primary']}>
               Deploy Now
             </a>
-            <a href="https://github.com/woodRock/closedai" className={`${styles['text-white']} ${styles['px-12']} ${styles['py-5']} ${styles['rounded-2xl']} ${styles['text-xl']} ${styles['font-bold']} ${styles.glass}`}>
+            <a href="https://github.com/woodRock/closedai" target="_blank" rel="noopener noreferrer" className={styles['btn-secondary']}>
               View Source
             </a>
           </div>
@@ -89,49 +89,126 @@ const DocsPage: React.FC = () => {
       {/* Features */}
       <section id="features" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={styles['max-w-7xl']}>
-          <div className={`${styles.grid} ${styles['md:grid-cols-3']} ${styles['gap-12']}`}>
+          <div className={`${styles.grid} ${styles.md_grid_cols_3} ${styles['gap-12']}`}>
             <div className={styles['space-y-6']}>
-              <div className={`${styles['w-14']} ${styles['h-14']} ${styles['bg-blue-600']} ${styles['rounded-2xl']} ${styles.flex} ${styles['items-center']} ${styles['justify-center']}`}>
+              <div className={`${styles['icon-box']} ${styles['bg-blue-600']}`}>
                 <i className="fas fa-piggy-bank text-white"></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Zero Overhead</h3>
-              <p className={styles['text-gray-400']}>Runs within the generous free tier of GitHub Actions.</p>
+              <p className={styles['text-gray-400']}>Runs within the generous free tier of GitHub Actions. No servers to maintain.</p>
             </div>
             <div className={styles['space-y-6']}>
-              <div className={`${styles['w-14']} ${styles['h-14']} ${styles['bg-purple-500']} ${styles['rounded-2xl']} ${styles.flex} ${styles['items-center']} ${styles['justify-center']}`}>
+              <div className={`${styles['icon-box']} ${styles['bg-purple-500']}`}>
                 <i className="fas fa-brain text-white"></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Powered by Gemini</h3>
-              <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code.</p>
+              <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code with massive context windows.</p>
             </div>
             <div className={styles['space-y-6']}>
-              <div className={`${styles['w-14']} ${styles['h-14']} ${styles['bg-pink-500']} ${styles['rounded-2xl']} ${styles.flex} ${styles['items-center']} ${styles['justify-center']}`}>
+              <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
                 <i className="fas fa-shield-virus text-white"></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Sandboxed</h3>
-              <p className={styles['text-gray-400']}>Isolated environment for every task you trigger.</p>
+              <p className={styles['text-gray-400']}>Isolated environment for every task. Your main environment stays clean and safe.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Workflow */}
+      <section id="how-it-works" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={styles['max-w-7xl']}>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-16']} ${styles['text-center']} ${styles['text-white']}`}>The Workflow</h2>
+          <div className={`${styles.grid} ${styles.md_grid_cols_3} ${styles['gap-8']}`}>
+            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
+              <div className={`${styles['text-blue-400']} ${styles['font-bold']} ${styles['mb-4']}`}>01. Command</div>
+              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>Send a Message</h4>
+              <p className={styles['text-gray-400']}>Tell the bot what to do via Telegram. "Fix the login bug" or "Add a new page".</p>
+            </div>
+            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
+              <div className={`${styles['text-purple-400']} ${styles['font-bold']} ${styles['mb-4']}`}>02. Execute</div>
+              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>GitHub Action Triggers</h4>
+              <p className={styles['text-gray-400']}>The agent wakes up in a GitHub Action, analyzes your code, and applies changes.</p>
+            </div>
+            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
+              <div className={`${styles['text-pink-400']} ${styles['font-bold']} ${styles['mb-4']}`}>03. Deploy</div>
+              <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['mb-4']} ${styles['text-white']}`}>Auto-Commit</h4>
+              <p className={styles['text-gray-400']}>Changes are committed back to your repo. Your site updates automatically.</p>
             </div>
           </div>
         </div>
       </section>
 
       {/* Setup */}
-      <section id="setup" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+      <section id="setup" className={`${styles['py-32']} ${styles['bg-white/5']} ${styles['px-6']} ${styles.reveal}`}>
         <div className={`${styles['max-w-4xl']} ${styles['p-12']} ${styles['rounded-3xl']} ${styles.glass}`}>
-          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Ready to start?</h2>
-          <div className={styles['space-y-12']}>
-            <div className={`${styles.flex} ${styles['gap-8']}`}>
-              <div className={`${styles['text-gray-500']} ${styles['font-bold']}`}>1</div>
+          <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-12']} ${styles['text-center']} ${styles['text-white']}`}>Quick Setup</h2>
+          <div className={styles['space-y-8']}>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>1</div>
               <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Bot Setup</h4>
-                <p className={styles['text-gray-400']}>Create a bot on Telegram and copy the token.</p>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Create Telegram Bot</h4>
+                <p className={styles['text-gray-400']}>Message @BotFather to get your API token.</p>
               </div>
             </div>
-            <div className={`${styles.flex} ${styles['gap-8']}`}>
-              <div className={`${styles['text-gray-500']} ${styles['font-bold']}`}>2</div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>2</div>
               <div>
-                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Secrets</h4>
-                <p className={styles['text-gray-400']}>Add TELEGRAM_BOT_TOKEN and GEMINI_API_KEY to GitHub Secrets.</p>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Get Gemini Key</h4>
+                <p className={styles['text-gray-400']}>Generate an API key from Google AI Studio.</p>
+              </div>
+            </div>
+            <div className={`${styles.flex} ${styles['gap-8']} ${styles['items-start']}`}>
+              <div className={styles['step-number']}>3</div>
+              <div>
+                <h4 className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>Configure Secrets</h4>
+                <p className={styles['text-gray-400']}>Add tokens to your GitHub Repository Secrets.</p>
+              </div>
+            </div>
+          </div>
+          <div className={`${styles['mt-12']} ${styles['text-center']}`}>
+            <a href="https://github.com/woodRock/closedai#setup" target="_blank" rel="noopener noreferrer" className={styles['btn-primary']}>
+              View Full Guide
+            </a>
+          </div>
+        </div>
+      </section>
+
+      {/* Instant Mode */}
+      <section id="instant-mode" className={`${styles['py-32']} ${styles['px-6']} ${styles.reveal}`}>
+        <div className={styles['max-w-7xl']}>
+          <div className={`${styles.grid} ${styles.md_grid_cols_2} ${styles['gap-16']} ${styles['items-center']}`}>
+            <div>
+              <h2 className={`${styles['text-4xl']} ${styles['font-bold']} ${styles['mb-6']} ${styles['text-white']}`}>Instant Mode</h2>
+              <p className={`${styles['text-lg']} ${styles['text-gray-400']} ${styles['mb-8']}`}>
+                Don't want to wait for GitHub Actions? Run the bot locally or on a private server for sub-second response times.
+              </p>
+              <ul className={`${styles['space-y-4']} ${styles['text-gray-300']} ${styles['mb-8']}`}>
+                <li className={`${styles.flex} ${styles['gap-3']}`}>
+                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                  <span>Real-time polling for instant updates</span>
+                </li>
+                <li className={`${styles.flex} ${styles['gap-3']}`}>
+                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                  <span>Zero cold-start latency</span>
+                </li>
+                <li className={`${styles.flex} ${styles['gap-3']}`}>
+                  <i className="fas fa-check-circle text-green-400 mt-1"></i>
+                  <span>Full control over the execution environment</span>
+                </li>
+              </ul>
+              <div className={`${styles['bg-black']} ${styles['p-4']} ${styles['rounded-xl']} ${styles['font-mono']} ${styles['text-sm']} ${styles['text-blue-400']}`}>
+                $ npm run start:poll
+              </div>
+            </div>
+            <div className={`${styles['p-8']} ${styles['rounded-3xl']} ${styles.glass}`}>
+              <div className={`${styles['bg-black/40']} ${styles['rounded-2xl']} ${styles['p-6']} ${styles['text-sm']} ${styles['font-mono']}`}>
+                <div className={styles['text-gray-500']}># supervisor.ts</div>
+                <div className={styles['text-green-400']}>[INFO] Bot started in polling mode...</div>
+                <div className={styles['text-white']}>[RECV] New message from user: 12345</div>
+                <div className={styles['text-blue-400']}>[TASK] Analyzing repository structure...</div>
+                <div className={styles['text-purple-400']}>[AI] Generating solution...</div>
+                <div className={styles['text-green-400']}>[DONE] Applied changes in 0.8s</div>
               </div>
             </div>
           </div>
@@ -139,9 +216,19 @@ const DocsPage: React.FC = () => {
       </section>
 
       {/* Footer */}
-      <footer className={`${styles['py-20']} ${styles['text-center']}`}>
-        <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
-        <p className={`${styles['text-gray-500']} ${styles['mt-4']}`}>Empowering developers with autonomous Git workflows.</p>
+      <footer className={`${styles['py-20']} ${styles['text-center']} ${styles['border-t']} ${styles['border-white/10']}`}>
+        <div className={`${styles.flex} ${styles['justify-center']} ${styles['items-center']} ${styles['space-x-3']} ${styles['mb-6']}`}>
+          <div className={`${styles['w-8']} ${styles['h-8']} ${styles['bg-blue-600']} ${styles['rounded-lg']} ${styles.flex} ${styles['items-center']} ${styles['justify-center']}`}>
+            <svg className={`${styles['w-5']} ${styles['h-5']} ${styles['text-white']}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+          </div>
+          <span className={`${styles['text-xl']} ${styles['font-bold']} ${styles['text-white']}`}>ClosedAI</span>
+        </div>
+        <p className={styles['text-gray-500']}>Empowering developers with autonomous Git workflows.</p>
+        <div className={`${styles['mt-8']} ${styles['text-gray-600']} ${styles['text-sm']}`}>
+          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 3 Flash.
+        </div>
       </footer>
     </div>
   );
