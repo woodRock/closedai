@@ -102,7 +102,7 @@ const DocsPage: React.FC = () => {
                 <i className={`${styles['text-white']} fas fa-brain`}></i>
               </div>
               <h3 className={`${styles['text-2xl']} ${styles['font-bold']} ${styles['text-white']}`}>Powered by Gemini</h3>
-              <p className={styles['text-gray-400']}>Uses Google's Gemini 1.5 Flash to write high-quality code with massive context windows.</p>
+              <p className={styles['text-gray-400']}>Uses Google's Gemini 3 Flash to write high-quality code with massive context windows.</p>
             </div>
             <div className={styles['space-y-6']}>
               <div className={`${styles['icon-box']} ${styles['bg-pink-500']}`}>
@@ -266,7 +266,7 @@ const DocsPage: React.FC = () => {
         </div>
         <p className={styles['text-gray-500']}>Empowering developers with autonomous Git workflows.</p>
         <div className={`${styles['mt-8']} ${styles['text-gray-600']} ${styles['text-sm']}`}>
-          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 1.5 Flash.
+          &copy; {new Date().getFullYear()} ClosedAI. Built with Gemini 3 Flash.
         </div>
       </footer>
     </div>
