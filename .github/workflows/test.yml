@@ -9,13 +9,12 @@ jobs:
   run-bot:
     runs-on: ubuntu-latest
     permissions:
-      contents: write  # Required for the bot to push changes back
-      workflows: write # Required if the bot modifies files in .github/workflows/
+      contents: write # Required for the bot to push changes back
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Fetch all history for all branches and tags
+          fetch-depth: 0
 
       - name: Run ClosedAI Action
         uses: woodRock/closedai@main
