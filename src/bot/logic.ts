@@ -72,11 +72,8 @@ async function getChatHistory(chatId: number, limit = 20) {
       role = 'user';
     }
     
-    if (history.length > 0 && history[history.length - 1].role === role) {
-      history[history.length - 1].parts.push(...parts);
-    } else {
-      history.push({ role, parts });
-    }
+    // IMPORTANT: Do not merge turns. Gemini 3 is sensitive to turn structure.
+    history.push({ role, parts });
   }
 
   return history;
@@ -97,17 +94,36 @@ export async function processOneMessage(userMessage: string, chatId: number, rep
   while (geminiHistory.length > 0 && geminiHistory[0].role !== 'user') {
     geminiHistory.shift();
   }
-  // And it must end with 'model' role.
-  while (geminiHistory.length > 0) {
-    const last = geminiHistory[geminiHistory.length - 1];
-    if (last.role === 'model') {
-       if (last.parts.some((p: any) => p.functionCall)) {
+  
+  // Ensure the history ends correctly. 
+  // If it ends with a model turn that has function calls, we MUST have the response turn after it.
+  // If not, we remove the model turn.
+  if (geminiHistory.length > 0) {
+    let last = geminiHistory[geminiHistory.length - 1];
+    while (geminiHistory.length > 0) {
+      last = geminiHistory[geminiHistory.length - 1];
+      if (last.role === 'model') {
+        const hasCalls = last.parts.some((p: any) => p.functionCall);
+        if (hasCalls) {
+          // This model turn had calls. Was it followed by a function turn?
+          // We can't know for sure without checking the original full history,
+          // but we can assume if it's the LAST turn, it's missing the response.
           geminiHistory.pop();
           continue;
-       }
-       break; 
+        }
+        break; // Ends on a safe model turn
+      } else if (last.role === 'function') {
+        // A function turn MUST be preceded by a model turn with calls.
+        // If it's the last turn, it's valid, but the model needs to process it.
+        break; 
+      } else {
+        // User turn at the end is fine, but usually we want to end on model.
+        // Actually, for startChat/generateContent, ending on User is fine if we are about to send a Model turn.
+        // But here we are about to send a NEW User message.
+        // So history should ideally end on Model or Function.
+        break;
+      }
     }
-    geminiHistory.pop();
   }
 
   await db.collection('history').add({

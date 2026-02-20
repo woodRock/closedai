@@ -198,7 +198,7 @@ const DocsPage: React.FC = () => {
         </section>
 
         {/* Features */}
-        <section id="features" className="py-32 bg-white/5 px-6">
+        <section id="features" className={`py-32 bg-white/5 px-6 ${styles.reveal}`}>
           <div className="max-w-7xl mx-auto">
             <div className="grid md:grid-cols-3 gap-12">
               <div className="space-y-6">
@@ -236,7 +236,7 @@ const DocsPage: React.FC = () => {
         </section>
 
         {/* Setup */}
-        <section id="setup" className="py-32 px-6">
+        <section id="setup" className={`py-32 px-6 ${styles.reveal}`}>
           <div className={`max-w-4xl mx-auto glass p-12 rounded-[3rem] relative overflow-hidden ${styles.glass}`}>
             <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/10 rounded-full blur-3xl -z-10"></div>
             <h2 className="text-4xl font-bold mb-12 text-center">
@@ -307,7 +307,7 @@ const DocsPage: React.FC = () => {
         </section>
 
         {/* Instant Mode (Local Hosting) */}
-        <section id="instant-mode" className="py-32 px-6">
+        <section id="instant-mode" className={`py-32 px-6 ${styles.reveal}`}>
           <div className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center gap-16">
               <div className="flex-1">

@@ -156,42 +156,44 @@ function isShellCommandSafe(command: string): boolean {
 
 export async function executeTool(name: string, args: any, repoRoot: string, chatId: number, safeSendMessage: (chatId: number, text: string) => Promise<any>) {
   let content;
+  // Gemini 3 sometimes prefixes tool names
+  const normalizedName = name.replace(/^default_api:/, '');
   // If WORKSPACE_DIR is set, use it instead of repoRoot for file operations
   const activeRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : repoRoot;
   
   try {
-    if (name === "write_file") {
+    if (normalizedName === "write_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
       fs.writeFileSync(fullPath, args.content);
       content = { result: `Success: Wrote to ${p}` };
       logInstruction(chatId, 'WRITE', p);
-    } else if (name === "read_file") {
+    } else if (normalizedName === "read_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
       content = { result: fs.readFileSync(fullPath, "utf-8") };
       logInstruction(chatId, 'READ', p);
-    } else if (name === "list_directory") {
+    } else if (normalizedName === "list_directory") {
       const p = args.path || '.';
       const fullPath = sanitizePath(activeRoot, p);
       const files = fs.readdirSync(fullPath);
       content = { result: files.join('\n') };
       logInstruction(chatId, 'LIST', p);
-    } else if (name === "delete_file") {
+    } else if (normalizedName === "delete_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
       fs.unlinkSync(fullPath);
       content = { result: `Success: Deleted ${p}` };
       logInstruction(chatId, 'DELETE', p);
-    } else if (name === "move_file") {
+    } else if (normalizedName === "move_file") {
       const src = sanitizePath(activeRoot, args.source);
       const dst = sanitizePath(activeRoot, args.destination);
       fs.mkdirSync(path.dirname(dst), { recursive: true });
       fs.renameSync(src, dst);
       content = { result: `Success: Moved ${args.source} to ${args.destination}` };
       logInstruction(chatId, 'MOVE', `${args.source} -> ${args.destination}`);
-    } else if (name === "search_repo") {
+    } else if (normalizedName === "search_repo") {
       const query = args.query;
       try {
         const output = execSync(`grep -r "${query.replace(/"/g, '\\"')}" .`, { cwd: activeRoot }).toString();
@@ -204,22 +206,25 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
         }
       }
       logInstruction(chatId, 'SEARCH', query);
-    } else if (name === "run_shell") {
+    } else if (normalizedName === "run_shell") {
       const cmd = args.command;
       if (!isShellCommandSafe(cmd)) {
         throw new Error("Access denied: Dangerous shell command detected.");
       }
       content = { result: execSync(cmd, { cwd: activeRoot }).toString() };
       logInstruction(chatId, 'SHELL', cmd);
-    } else if (name === "reply") {
+    } else if (normalizedName === "reply") {
       const txt = args.text;
       await safeSendMessage(chatId, txt);
       content = { result: "Sent." };
       logInstruction(chatId, 'REPLY', txt.substring(0, 30) + '...');
+    } else {
+      content = { error: `Unknown tool: ${name}` };
+      logInstruction(chatId, 'ERROR', `Model tried to call unknown tool: ${name}`);
     }
   } catch (e: any) {
     content = { error: e.message };
-    logInstruction(chatId, 'ERROR', `Tool ${name} failed: ${e.message}`);
+    logInstruction(chatId, 'ERROR', `Tool ${normalizedName} failed: ${e.message}`);
   }
   return content;
 }
