@@ -1,0 +1,51 @@
+name: 'ClosedAI'
+description: 'An autonomous AI agent that manages your repository via Telegram.'
+author: 'woodrock'
+branding:
+  icon: 'message-square'
+  color: 'blue'
+
+inputs:
+  telegram_bot_token:
+    description: 'The token for your Telegram bot from @BotFather'
+    required: true
+  gemini_api_key:
+    description: 'Your Google AI Studio Gemini API Key'
+    required: true
+  firebase_service_account:
+    description: 'The JSON string of your Firebase Service Account'
+    required: true
+  allowed_user_ids:
+    description: 'Comma-separated list of Telegram User IDs authorized to use the bot'
+    required: true
+  unsafe_mode:
+    description: 'Set to "true" to bypass security filters (not recommended)'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Install Dependencies
+      run: npm install
+      shell: bash
+      working-directory: ${{ github.action_path }}
+
+    - name: Run ClosedAI Bot
+      run: |
+        export TELEGRAM_BOT_TOKEN="${{ inputs.telegram_bot_token }}"
+        export GEMINI_API_KEY="${{ inputs.gemini_api_key }}"
+        export FIREBASE_SERVICE_ACCOUNT='${{ inputs.firebase_service_account }}'
+        export ALLOWED_TELEGRAM_USER_IDS="${{ inputs.allowed_user_ids }}"
+        export UNSAFE_MODE="${{ inputs.unsafe_mode }}"
+        export WORKSPACE_DIR="${{ github.workspace }}"
+        
+        # Run the bot in polling mode
+        npx tsx bot.ts --poll
+      shell: bash
+      working-directory: ${{ github.action_path }}
