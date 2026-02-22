@@ -2,6 +2,17 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { handleSystemCommands } from '../src/bot/commands';
 import { db } from '../src/services/firebase';
 import { execSync } from 'child_process';
+import { model } from '../src/services/gemini';
+
+vi.mock('../src/services/gemini', () => ({
+  model: {
+    generateContent: vi.fn().mockResolvedValue({
+      response: {
+        text: () => 'Mocked formatted coverage report'
+      }
+    })
+  }
+}));
 
 vi.mock('../src/services/firebase', () => {
   const mockCollection = vi.fn();
@@ -52,6 +63,26 @@ describe('Commands Unit Tests', () => {
     const result = await handleSystemCommands('/ping', chatId, repoRoot, safeSendMessage);
     expect(result).toBe(true);
     expect(safeSendMessage).toHaveBeenCalledWith(chatId, "🏓 Pong!");
+  });
+
+  it('should handle /test', async () => {
+    (execSync as any).mockReturnValue(Buffer.from('test output with coverage'));
+    const result = await handleSystemCommands('/test', chatId, repoRoot, safeSendMessage);
+    expect(result).toBe(true);
+    expect(safeSendMessage).toHaveBeenCalledWith(chatId, "🧪 *Running tests & coverage...*");
+    expect(model.generateContent).toHaveBeenCalled();
+    expect(safeSendMessage).toHaveBeenCalledWith(chatId, "Mocked formatted coverage report");
+  });
+
+  it('should handle /test error', async () => {
+    (execSync as any).mockImplementation(() => { 
+      const err = new Error('test failed');
+      (err as any).stdout = Buffer.from('detailed test failure');
+      throw err;
+    });
+    const result = await handleSystemCommands('/test', chatId, repoRoot, safeSendMessage);
+    expect(result).toBe(true);
+    expect(safeSendMessage).toHaveBeenCalledWith(chatId, expect.stringContaining("Tests Failed"));
   });
 
   it('should handle /help', async () => {

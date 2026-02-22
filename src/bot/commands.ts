@@ -1,6 +1,7 @@
 import { execSync } from 'child_process';
 import { db } from '../services/firebase.js';
 import { logInstruction } from '../utils/logger.js';
+import { model } from '../services/gemini.js';
 
 export async function handleSystemCommands(userMessage: string, chatId: number, repoRoot: string, safeSendMessage: (chatId: number, text: string) => Promise<any>): Promise<boolean> {
   const parts = userMessage.trim().split(/\s+/);
@@ -177,6 +178,34 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     return true;
   }
 
+  if (cmd === '/test') {
+    logInstruction(chatId, 'CMD', 'Executing /test');
+    const statusMsg = await safeSendMessage(chatId, "🧪 *Running tests & coverage...*");
+    try {
+      const output = execSync('npx vitest run --coverage', { cwd: repoRoot, stdio: 'pipe' }).toString();
+      
+      const prompt = `The following is the output of a test run with coverage. 
+Please format the coverage table and test results into a clean, readable summary for a Telegram message.
+Use Markdown. Focus on the summary table and whether tests passed.
+
+Output:
+${output}`;
+
+      const result = await model.generateContent(prompt);
+      const formatted = result.response.text();
+      
+      if (statusMsg) {
+        await safeSendMessage(chatId, formatted);
+      } else {
+        await safeSendMessage(chatId, formatted);
+      }
+    } catch (e: any) {
+      const errorOutput = e.stdout?.toString() || e.message;
+      await safeSendMessage(chatId, `❌ *Tests Failed or Error occurred:*\n\n\`\`\`\n${errorOutput.substring(0, 3000)}\n\`\`\``);
+    }
+    return true;
+  }
+
   if (cmd === '/help') {
     const response = `🤖 *ClosedAI Help*\n\n` +
       `/status - Show system status & disk usage\n` +
@@ -186,6 +215,7 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
       `/gitlog - Show last 5 git commits\n` +
       `/diff - Show working directory changes\n` +
       `/queue - Show queued tasks\n` +
+      `/test - Run tests & show coverage\n` +
       `/ping - Check if bot is alive\n` +
       `/restart - Restart the bot process\n` +
       `/help - Show this message\n\n` +
