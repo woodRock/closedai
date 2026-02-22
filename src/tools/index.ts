@@ -6,9 +6,22 @@ import { logInstruction } from '../utils/logger.js';
 import pc from 'picocolors';
 import { decode } from 'html-entities';
 
+import { getFileOutline } from '../utils/code-intelligence.js';
+
 export const toolDefinitions = [
   {
     functionDeclarations: [
+      {
+        name: "get_file_outline",
+        description: "Get a summary of classes, methods, and functions in a code file using Tree-sitter.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." }
+          },
+          required: ["path"]
+        }
+      },
       {
         name: "write_file",
         description: "Create or overwrite a file with specific content.",
@@ -341,7 +354,14 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
   const activeRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : repoRoot;
   
   try {
-    if (normalizedName === "write_file") {
+    } else if (normalizedName === "get_file_outline") {
+      const p = args.path;
+      const fullPath = sanitizePath(activeRoot, p);
+      const fileContent = fs.readFileSync(fullPath, "utf-8");
+      const outline = await getFileOutline(p, fileContent);
+      content = { result: JSON.stringify(outline, null, 2) };
+      logInstruction(chatId, 'OUTLINE', p);
+    } else if (normalizedName === "write_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
       fs.mkdirSync(path.dirname(fullPath), { recursive: true });
