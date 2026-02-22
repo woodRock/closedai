@@ -97,7 +97,8 @@ export async function processOneMessage(
   chatId: number, 
   repoRoot: string, 
   messageId?: string,
-  image?: { data: string, mimeType: string } // data is base64 string
+  image?: { data: string, mimeType: string }, // data is base64 string
+  isPolling: boolean = false
 ) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
   if (allowedUsers.length > 0 && !allowedUsers.includes(chatId.toString())) {
@@ -178,10 +179,15 @@ export async function processOneMessage(
     ? fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf-8') 
     : 'Not found';
   
+  const envContext = isPolling 
+    ? "ENVIRONMENT: Local Runner (Polling Mode). File changes are PERSISTENT between messages. You can continue work incrementally."
+    : "ENVIRONMENT: GitHub Action (Batch Mode). Environment is EPHEMERAL. Uncommitted changes are LOST between message processing runs. You must commit/push if you want to save state across messages.";
+
   const systemPrompt = `You are ClosedAI, a senior software engineer assistant.
 Current Directory: ${repoRoot}
 Structure: ${fileStructure}
 package.json: ${packageJson}
+${envContext}
 
 CRITICAL RULES:
 1. FOCUS: Focus exclusively on the latest user request.
@@ -414,7 +420,7 @@ Ready to assist.`;
   }
 }
 
-export async function checkQueue(repoRoot: string) {
+export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
   const snapshot = await db.collection('queue')
     .where('status', '==', 'pending')
     .orderBy('createdAt', 'asc')
@@ -425,7 +431,7 @@ export async function checkQueue(repoRoot: string) {
   const data = doc.data();
   await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
   try {
-    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.image);
+    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.image, isPolling);
   } catch (err) {
     await doc.ref.update({ status: 'pending' }).catch(() => {});
   }

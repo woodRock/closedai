@@ -110,7 +110,7 @@ async function run() {
     // Background tasks
     setInterval(async () => {
       try {
-        await checkQueue(repoRoot);
+        await checkQueue(repoRoot, true);
         // Update heartbeat every minute
         await botStatusRef.set({ last_seen: new Date() }, { merge: true });
       } catch (err) {
@@ -131,7 +131,7 @@ async function run() {
       }
 
       if (text || image) {
-        await processOneMessage(text, ctx.chat.id, repoRoot, undefined, image).catch(console.error);
+        await processOneMessage(text, ctx.chat.id, repoRoot, undefined, image, true).catch(console.error);
       }
     });
 
@@ -157,7 +157,7 @@ async function run() {
       const snapshot = await db.collection('queue').where('status', '==', 'pending').limit(1).get();
       if (snapshot.empty) break;
       
-      await checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+      await checkQueue(repoRoot, false).catch(err => console.error("Queue Worker Error:", err));
       initialQueueRetryCount++;
     }
 
@@ -182,7 +182,7 @@ async function run() {
 
         if (text || image) {
           try {
-            await processOneMessage(text, message.chat.id, repoRoot, undefined, image);
+            await processOneMessage(text, message.chat.id, repoRoot, undefined, image, false);
           } catch (err) {
             console.error("Error processing message:", err);
           }
@@ -203,7 +203,7 @@ async function run() {
       while (retryCount < 5) { // Try up to 5 more items
         const snap = await db.collection('queue').where('status', '==', 'pending').limit(1).get();
         if (snap.empty) break;
-        await checkQueue(repoRoot).catch(() => {});
+        await checkQueue(repoRoot, false).catch(() => {});
         retryCount++;
       }
     }
