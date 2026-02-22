@@ -48,6 +48,26 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     return true;
   }
 
+  if (cmd === '/diff') {
+    logInstruction(chatId, 'CMD', 'Executing /diff');
+    try {
+      const diffStat = execSync('git diff --stat', { cwd: repoRoot }).toString().trim();
+      const diff = execSync('git diff', { cwd: repoRoot }).toString().trim();
+      
+      if (!diffStat) {
+        await safeSendMessage(chatId, "✅ No changes in working directory.");
+      } else {
+        const response = `📝 *Working Directory Changes*\n\n` +
+          `*Summary:*\n\`\`\`\n${diffStat}\n\`\`\`\n\n` +
+          `*Full Diff (truncated):*\n\`\`\`diff\n${diff.substring(0, 2000)}${diff.length > 2000 ? '\n...' : ''}\n\`\`\``;
+        await safeSendMessage(chatId, response);
+      }
+    } catch (e: any) {
+      await safeSendMessage(chatId, "❌ Failed to fetch diff: " + e.message);
+    }
+    return true;
+  }
+
   if (cmd === '/git') {
     logInstruction(chatId, 'CMD', 'Executing /git');
     try {
@@ -160,6 +180,7 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
       `/log [n] - Show last n messages (default 10)\n` +
       `/git - Show git branch & status\n` +
       `/gitlog - Show last 5 git commits\n` +
+      `/diff - Show working directory changes\n` +
       `/queue - Show queued tasks\n` +
       `/ping - Check if bot is alive\n` +
       `/restart - Restart the bot process\n` +

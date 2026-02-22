@@ -93,9 +93,28 @@ export const toolDefinitions = [
         parameters: {
           type: SchemaType.OBJECT,
           properties: {
-            query: { type: SchemaType.STRING, description: "The string to search for." }
+            query: { type: SchemaType.STRING, description: "The string to search for." },
+            case_insensitive: { type: SchemaType.BOOLEAN, description: "Whether to ignore case." }
           },
           required: ["query"]
+        }
+      },
+      {
+        name: "list_files",
+        description: "List all files in the repository recursively.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to start from (default: .)." }
+          }
+        }
+      },
+      {
+        name: "git_diff_summary",
+        description: "Show a summarized view of changes (diff --stat).",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {}
         }
       },
       {
@@ -376,8 +395,9 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       logInstruction(chatId, 'MOVE', `${args.source} -> ${args.destination}`);
     } else if (normalizedName === "search_repo") {
       const query = args.query;
+      const caseFlag = args.case_insensitive ? "-i" : "";
       try {
-        const output = execSync(`grep -r "${query.replace(/"/g, '\\"')}" .`, { cwd: activeRoot }).toString();
+        const output = execSync(`grep -r ${caseFlag} --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist "${query.replace(/"/g, '\\"')}" .`, { cwd: activeRoot }).toString();
         content = { result: output };
       } catch (e: any) {
         if (e.status === 1) {
@@ -387,6 +407,16 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
         }
       }
       logInstruction(chatId, 'SEARCH', query);
+    } else if (normalizedName === "list_files") {
+      const p = args.path || '.';
+      const fullPath = sanitizePath(activeRoot, p);
+      const output = execSync(`find ${p} -maxdepth 4 -not -path "*/.*" -not -path "*/node_modules/*" -not -path "*/dist/*"`, { cwd: activeRoot }).toString();
+      content = { result: output };
+      logInstruction(chatId, 'LIST_FILES', p);
+    } else if (normalizedName === "git_diff_summary") {
+      const output = execSync("git diff --stat", { cwd: activeRoot }).toString();
+      content = { result: output || "No changes." };
+      logInstruction(chatId, 'GIT', 'diff --stat');
     } else if (normalizedName === "run_shell") {
       const cmd = args.command;
       if (!isShellCommandSafe(cmd)) {
