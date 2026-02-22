@@ -119,30 +119,45 @@ describe('Tools Unit Tests', () => {
     expect(result).toEqual({ error: 'bash error' });
   });
 
-  it('web_search should call Tavily API', async () => {
-    const mockResults = [{ title: 'Test', url: 'http://test.com', content: 'test content' }];
+  it('web_search should call DuckDuckGo', async () => {
+    const mockHtml = `
+      <div class="result__body">
+        <a class="result__a" href="http://test.com">Test Title</a>
+        <a class="result__snippet">test content</a>
+      </div>
+      <div class="clear"></div>
+    `;
     (global.fetch as any).mockResolvedValue({
       ok: true,
-      json: async () => ({ results: mockResults })
+      text: async () => mockHtml
     });
 
     const result = await executeTool('web_search', { query: 'test query' }, repoRoot, chatId, mockSafeSendMessage);
     
-    expect(global.fetch).toHaveBeenCalledWith("https://api.tavily.com/search", expect.objectContaining({
-      method: "POST",
-      body: JSON.stringify({
-        api_key: 'test-key',
-        query: 'test query',
-        search_depth: "basic",
-        max_results: 5
+    expect(global.fetch).toHaveBeenCalledWith(
+      "https://html.duckduckgo.com/html/?q=test%20query",
+      expect.objectContaining({
+        headers: expect.objectContaining({
+          'User-Agent': expect.any(String)
+        })
       })
-    }));
-    expect(result).toEqual({ result: JSON.stringify(mockResults, null, 2) });
+    );
+
+    const expectedResults = [{
+      title: 'Test Title',
+      url: 'http://test.com',
+      content: 'test content'
+    }];
+    expect(result).toEqual({ result: JSON.stringify(expectedResults, null, 2) });
   });
 
-  it('web_search should throw error if TAVILY_API_KEY is missing', async () => {
-    delete process.env.TAVILY_API_KEY;
+  it('web_search should return error if search fails', async () => {
+    (global.fetch as any).mockResolvedValue({
+      ok: false,
+      status: 500
+    });
     const result = await executeTool('web_search', { query: 'test query' }, repoRoot, chatId, mockSafeSendMessage);
-    expect(result).toEqual({ error: 'TAVILY_API_KEY is not set in environment variables. Please add it to your .env file.' });
+    expect(result).toEqual({ error: 'Search failed with status 500' });
   });
+
 });
