@@ -220,6 +220,17 @@ export const toolDefinitions = [
             delete: { type: SchemaType.STRING, description: "Delete branch name." }
           }
         }
+      },
+      {
+        name: "web_search",
+        description: "Search the web for up to date information.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            query: { type: SchemaType.STRING, description: "The search query." }
+          },
+          required: ["query"]
+        }
       }
     ]
   }
@@ -492,6 +503,33 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
         content = { result: execSync("git branch", { cwd: activeRoot }).toString() };
         logInstruction(chatId, 'GIT', 'branch');
       }
+    } else if (normalizedName === "web_search") {
+      const query = args.query;
+      logInstruction(chatId, 'SEARCH_WEB', query);
+      
+      const apiKey = process.env.TAVILY_API_KEY;
+      if (!apiKey) {
+        throw new Error("TAVILY_API_KEY is not set in environment variables. Please add it to your .env file.");
+      }
+
+      const response = await fetch("https://api.tavily.com/search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: apiKey,
+          query: query,
+          search_depth: "basic",
+          max_results: 5
+        })
+      });
+
+      if (!response.ok) {
+        const errText = await response.text();
+        throw new Error(`Search API error: ${response.status} ${errText}`);
+      }
+
+      const data: any = await response.json();
+      content = { result: JSON.stringify(data.results, null, 2) };
     } else {
       content = { error: `Unknown tool: ${name}` };
       logInstruction(chatId, 'ERROR', `Model tried to call unknown tool: ${name}`);
