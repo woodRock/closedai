@@ -19,3 +19,4 @@ firebase.json
 .bot.lock
 node_modules/
 dist/
+coverage
