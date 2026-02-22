@@ -4,6 +4,7 @@ import * as path from 'path';
 import { execSync } from 'child_process';
 import { logInstruction } from '../utils/logger.js';
 import pc from 'picocolors';
+import { decode } from 'html-entities';
 
 export const toolDefinitions = [
   {
@@ -507,29 +508,47 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       const query = args.query;
       logInstruction(chatId, 'SEARCH_WEB', query);
       
-      const apiKey = process.env.TAVILY_API_KEY;
-      if (!apiKey) {
-        throw new Error("TAVILY_API_KEY is not set in environment variables. Please add it to your .env file.");
-      }
-
-      const response = await fetch("https://api.tavily.com/search", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          api_key: apiKey,
-          query: query,
-          search_depth: "basic",
-          max_results: 5
-        })
+      const url = `https://html.duckduckgo.com/html/?q=${encodeURIComponent(query)}`;
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
       });
 
       if (!response.ok) {
-        const errText = await response.text();
-        throw new Error(`Search API error: ${response.status} ${errText}`);
+        throw new Error(`Search failed with status ${response.status}`);
       }
 
-      const data: any = await response.json();
-      content = { result: JSON.stringify(data.results, null, 2) };
+      const text = await response.text();
+      const results = [];
+      const resultRegex = /result__body">([\s\S]*?)<div class="clear">/g;
+      const titleRegex = /class="result__a" href="([^"]+)">([\s\S]*?)<\/a>/;
+      const snippetRegex = /class="result__snippet"[^>]*>([\s\S]*?)<\/a>/;
+
+      let match;
+      while ((match = resultRegex.exec(text)) !== null && results.length < 5) {
+        const block = match[1];
+        const titleMatch = titleRegex.exec(block);
+        const snippetMatch = snippetRegex.exec(block);
+        
+        if (titleMatch) {
+          let rawUrl = titleMatch[1];
+          // Handle DDG redirect URLs
+          if (rawUrl.includes('uddg=')) {
+            const urlMatch = rawUrl.match(/uddg=([^&]+)/);
+            if (urlMatch) {
+              rawUrl = decodeURIComponent(urlMatch[1]);
+            }
+          }
+
+          results.push({
+            title: decode(titleMatch[2].replace(/<[^>]*>/g, '').trim()),
+            url: rawUrl,
+            content: snippetMatch ? decode(snippetMatch[1].replace(/<[^>]*>/g, '').trim()) : ''
+          });
+        }
+      }
+      content = { result: JSON.stringify(results, null, 2) };
     } else {
       content = { error: `Unknown tool: ${name}` };
       logInstruction(chatId, 'ERROR', `Model tried to call unknown tool: ${name}`);
