@@ -26,21 +26,30 @@ bot.catch((err: any) => {
   logInstruction(0, 'ERROR', `Telegraf error: ${msg}`);
 });
 
-async function downloadImage(fileId: string) {
+async function downloadMedia(fileId: string) {
   try {
     const link = await bot.telegram.getFileLink(fileId);
     const response = await fetch(link.href);
     const buffer = await response.arrayBuffer();
     
-    let mimeType = response.headers.get('content-type') || 'image/jpeg';
+    let mimeType = response.headers.get('content-type') || 'application/octet-stream';
     
-    // If the server returns a generic octet-stream, try to guess from extension or default to jpeg
     if (mimeType === 'application/octet-stream') {
       const ext = path.extname(link.pathname).toLowerCase();
-      if (ext === '.png') mimeType = 'image/png';
-      else if (ext === '.webp') mimeType = 'image/webp';
-      else if (ext === '.gif') mimeType = 'image/gif';
-      else mimeType = 'image/jpeg';
+      const mimeMap: Record<string, string> = {
+        '.png': 'image/png',
+        '.jpg': 'image/jpeg',
+        '.jpeg': 'image/jpeg',
+        '.webp': 'image/webp',
+        '.gif': 'image/gif',
+        '.pdf': 'application/pdf',
+        '.mp3': 'audio/mpeg',
+        '.wav': 'audio/wav',
+        '.ogg': 'audio/ogg',
+        '.mp4': 'video/mp4',
+        '.webm': 'video/webm'
+      };
+      mimeType = mimeMap[ext] || mimeType;
     }
 
     return {
@@ -48,7 +57,7 @@ async function downloadImage(fileId: string) {
       mimeType
     };
   } catch (e) {
-    console.error("Failed to download image:", e);
+    console.error("Failed to download media:", e);
     return undefined;
   }
 }
@@ -121,17 +130,31 @@ async function run() {
     bot.on('message', async (ctx) => {
       const msg = ctx.message as any;
       let text = msg.text || msg.caption || '';
-      let image = undefined;
+      let media = undefined;
 
       if (msg.photo) {
         const photo = msg.photo[msg.photo.length - 1];
-        image = await downloadImage(photo.file_id);
-      } else if (msg.document && msg.document.mime_type?.startsWith('image/')) {
-        image = await downloadImage(msg.document.file_id);
+        media = await downloadMedia(photo.file_id);
+      } else if (msg.voice) {
+        media = await downloadMedia(msg.voice.file_id);
+      } else if (msg.audio) {
+        media = await downloadMedia(msg.audio.file_id);
+      } else if (msg.video) {
+        media = await downloadMedia(msg.video.file_id);
+      } else if (msg.document) {
+        const allowedMimeTypes = [
+          'application/pdf',
+          'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+          'audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac',
+          'video/mp4', 'video/mpeg', 'video/mov', 'video/avi', 'video/x-flv', 'video/mpg', 'video/webm', 'video/wmv', 'video/3gpp'
+        ];
+        if (allowedMimeTypes.includes(msg.document.mime_type)) {
+          media = await downloadMedia(msg.document.file_id);
+        }
       }
 
-      if (text || image) {
-        await processOneMessage(text, ctx.chat.id, repoRoot, undefined, image, true).catch(console.error);
+      if (text || media) {
+        await processOneMessage(text, ctx.chat.id, repoRoot, undefined, media, true).catch(console.error);
       }
     });
 
@@ -171,18 +194,32 @@ async function run() {
       if ('message' in update) {
         const message = update.message as any;
         let text = message.text || message.caption || '';
-        let image = undefined;
+        let media = undefined;
 
         if (message.photo) {
           const photo = message.photo[message.photo.length - 1];
-          image = await downloadImage(photo.file_id);
-        } else if (message.document && message.document.mime_type?.startsWith('image/')) {
-          image = await downloadImage(message.document.file_id);
+          media = await downloadMedia(photo.file_id);
+        } else if (message.voice) {
+          media = await downloadMedia(message.voice.file_id);
+        } else if (message.audio) {
+          media = await downloadMedia(message.audio.file_id);
+        } else if (message.video) {
+          media = await downloadMedia(message.video.file_id);
+        } else if (message.document) {
+          const allowedMimeTypes = [
+            'application/pdf',
+            'image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif',
+            'audio/wav', 'audio/mpeg', 'audio/mp3', 'audio/aiff', 'audio/aac', 'audio/ogg', 'audio/flac',
+            'video/mp4', 'video/mpeg', 'video/mov', 'video/avi', 'video/x-flv', 'video/mpg', 'video/webm', 'video/wmv', 'video/3gpp'
+          ];
+          if (allowedMimeTypes.includes(message.document.mime_type)) {
+            media = await downloadMedia(message.document.file_id);
+          }
         }
 
-        if (text || image) {
+        if (text || media) {
           try {
-            await processOneMessage(text, message.chat.id, repoRoot, undefined, image, false);
+            await processOneMessage(text, message.chat.id, repoRoot, undefined, media, false);
           } catch (err) {
             console.error("Error processing message:", err);
           }

@@ -97,7 +97,7 @@ export async function processOneMessage(
   chatId: number, 
   repoRoot: string, 
   messageId?: string,
-  image?: { data: string, mimeType: string }, // data is base64 string
+  media?: { data: string, mimeType: string }, // data is base64 string
   isPolling: boolean = false
 ) {
   const allowedUsers = (process.env.ALLOWED_TELEGRAM_USER_IDS || '').split(',').map(s => s.trim()).filter(id => id.length > 0);
@@ -133,17 +133,12 @@ export async function processOneMessage(
     }
   }
 
-  const userParts: any[] = [{ text: userMessage || (image ? "Explain this image." : "") }];
-  if (image) {
-    let finalMimeType = image.mimeType;
-    if (finalMimeType === 'application/octet-stream') {
-      finalMimeType = 'image/jpeg';
-    }
-
+  const userParts: any[] = [{ text: userMessage || (media ? "Explain this media." : "") }];
+  if (media) {
     userParts.push({
       inlineData: {
-        data: image.data,
-        mimeType: finalMimeType
+        data: media.data,
+        mimeType: media.mimeType
       }
     });
   }
@@ -160,7 +155,7 @@ export async function processOneMessage(
     if (handled) return;
   }
 
-  logInstruction(chatId, 'GEMINI', `Processing: ${userMessage ? userMessage.substring(0, 50) : 'Image'}${userMessage && userMessage.length > 50 ? '...' : ''}`);
+  logInstruction(chatId, 'GEMINI', `Processing: ${userMessage ? userMessage.substring(0, 50) : (media ? media.mimeType : 'Unknown')}${userMessage && userMessage.length > 50 ? '...' : ''}`);
   
   const isGitRepo = fs.existsSync(path.join(repoRoot, '.git'));
   if (isGitRepo) {
@@ -409,7 +404,7 @@ Ready to assist.`;
       await db.collection('queue').add({
         chatId,
         userMessage,
-        image,
+        media,
         status: 'pending',
         createdAt: FieldValue.serverTimestamp()
       });
@@ -431,7 +426,7 @@ export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
   const data = doc.data();
   await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
   try {
-    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.image, isPolling);
+    await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.media || data.image, isPolling);
   } catch (err) {
     await doc.ref.update({ status: 'pending' }).catch(() => {});
   }
