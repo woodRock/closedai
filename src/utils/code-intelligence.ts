@@ -51,7 +51,7 @@ export async function getFileOutline(filePath: string, content: string): Promise
 
   const symbols: SymbolInfo[] = [];
 
-  function traverse(node: Parser.SyntaxNode) {
+  function traverse(node: any) {
     let symbol: SymbolInfo | null = null;
 
     // Simplified extraction logic - can be refined per language
