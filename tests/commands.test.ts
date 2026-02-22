@@ -156,6 +156,11 @@ describe('Commands Unit Tests', () => {
     expect(result).toBe(true);
     expect(safeSendMessage).toHaveBeenCalledWith(chatId, "🔄 Restarting bot...");
     
+    vi.runAllTimers();
+    expect(exitSpy).toHaveBeenCalledWith(0);
+    vi.useRealTimers();
+  });
+
   it('should handle /gitlog error', async () => {
     (execSync as any).mockImplementation(() => { throw new Error('git error'); });
     const result = await handleSystemCommands('/gitlog', chatId, repoRoot, safeSendMessage);

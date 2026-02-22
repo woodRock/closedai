@@ -383,34 +383,48 @@ Ready to assist.`;
     }
 
   } catch (error: any) {
-    logInstruction(chatId, 'ERROR', `Error: ${error.message}`);
+    const errorString = error.stack || error.message || String(error);
+    logInstruction(chatId, 'ERROR', `Error: ${errorString}`);
     
-    // Broaden error detection for overloaded/503/504 errors
     const isOverloaded = 
       error instanceof GoogleGenerativeAIError ||
       error.status === 503 || 
       error.status === 504 ||
       error.status === 429 ||
-      error.message?.includes('503') || 
-      error.message?.includes('504') ||
-      error.message?.includes('429') ||
-      error.message?.toLowerCase().includes('overloaded') ||
-      error.message?.toLowerCase().includes('service unavailable') ||
-      error.message?.toLowerCase().includes('deadline exceeded') ||
-      error.message?.toLowerCase().includes('socket hang up') ||
-      error.message?.toLowerCase().includes('fetch failed');
+      error.code === 503 ||
+      error.code === 504 ||
+      error.code === 429 ||
+      errorString.includes('503') || 
+      errorString.includes('504') ||
+      errorString.includes('429') ||
+      errorString.toLowerCase().includes('overloaded') ||
+      errorString.toLowerCase().includes('service unavailable') ||
+      errorString.toLowerCase().includes('deadline exceeded') ||
+      errorString.toLowerCase().includes('socket hang up') ||
+      errorString.toLowerCase().includes('fetch failed') ||
+      errorString.toLowerCase().includes('model is currently experiencing high demand');
 
-    if (isOverloaded && !messageId) {
-      await db.collection('queue').add({
-        chatId,
-        userMessage,
-        media,
-        status: 'pending',
-        createdAt: FieldValue.serverTimestamp()
-      });
-      await safeSendMessage(chatId, "⏳ Gemini is overloaded or unavailable. Your request has been queued and will be retried automatically.");
+    if (isOverloaded) {
+      if (!messageId) {
+        await db.collection('queue').add({
+          chatId,
+          userMessage,
+          media,
+          status: 'pending',
+          attempts: 1,
+          createdAt: FieldValue.serverTimestamp()
+        });
+        await safeSendMessage(chatId, "⏳ Gemini is overloaded or unavailable. Your request has been queued and will be retried automatically.");
+      } else {
+        // Re-throw so checkQueue can reset status to pending
+        throw error;
+      }
     } else {
-      await safeSendMessage(chatId, "❌ Error: " + error.message);
+      await safeSendMessage(chatId, "❌ Error: " + (error.message || String(error)));
+      // If it was a queued message and it failed with a permanent error, delete it
+      if (messageId) {
+        await db.collection('queue').doc(messageId).delete().catch(() => {});
+      }
     }
   }
 }
@@ -424,7 +438,11 @@ export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
   if (snapshot.empty) return;
   const doc = snapshot.docs[0];
   const data = doc.data();
-  await doc.ref.update({ status: 'processing', lastAttempt: FieldValue.serverTimestamp() });
+  await doc.ref.update({ 
+    status: 'processing', 
+    lastAttempt: FieldValue.serverTimestamp(),
+    attempts: FieldValue.increment(1)
+  });
   try {
     await processOneMessage(data.userMessage, data.chatId, repoRoot, doc.id, data.media || data.image, isPolling);
   } catch (err) {

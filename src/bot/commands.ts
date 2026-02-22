@@ -81,7 +81,7 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
   }
 
   if (cmd === '/status') {
-    logInstruction(chatId, 'CMD', 'Executing /status');
+    logInstruction(chatId, 'CMD', `Executing /status`);
     const uptime = process.uptime();
     const hours = Math.floor(uptime / 3600);
     const minutes = Math.floor((uptime % 3600) / 60);
@@ -98,18 +98,20 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     } catch {}
 
     const response = `✅ *System Status*\n\n` +
-      `⏱ *Uptime:* ${hours}h ${minutes}m ${seconds}s\n` +
-      `💾 *Disk Usage:* ${diskUsage}\n` +
-      `📦 *Version:* \`${gitHash}\`\n` +
-      `⚙️ *Mode:* ${process.argv.includes('--poll') ? "Polling" : "Batch"}\n` +
-      `📂 *Root:* \`${repoRoot}\``;
+      `\`\`\`\n` +
+      `Uptime:     ${hours}h ${minutes}m ${seconds}s\n` +
+      `Disk Usage: ${diskUsage}\n` +
+      `Version:    ${gitHash}\n` +
+      `Mode:       ${process.argv.includes('--poll') ? "Polling" : "Batch"}\n` +
+      `Root:       ${repoRoot}\n` +
+      `\`\`\``;
     
     await safeSendMessage(chatId, response);
     return true;
   }
 
   if (cmd === '/stats') {
-    logInstruction(chatId, 'CMD', 'Executing /stats');
+    logInstruction(chatId, 'CMD', `Executing /stats`);
     const snapshot = await db.collection('history').get();
     const total = snapshot.size;
     const userCounts: Record<string, number> = {};
@@ -128,15 +130,17 @@ export async function handleSystemCommands(userMessage: string, chatId: number, 
     });
 
     let response = `📊 *Usage Statistics*\n\n` +
+      `\`\`\`\n` +
       `Total Log Entries: ${total}\n` +
-      `👤 User Messages: ${userCount}\n` +
-      `🤖 Bot Responses: ${modelCount}\n` +
-      `Unique Users: ${Object.keys(userCounts).length}\n\n` +
-      `*User Activity:*\n`;
+      `User Messages:     ${userCount}\n` +
+      `Bot Responses:     ${modelCount}\n` +
+      `Unique Users:      ${Object.keys(userCounts).length}\n\n` +
+      `User Activity:\n`;
     
     for (const [id, count] of Object.entries(userCounts)) {
-      response += `• \`${id}\`: ${count}\n`;
+      response += `• ${id.padEnd(12)}: ${count}\n`;
     }
+    response += `\`\`\``;
     
     await safeSendMessage(chatId, response);
     return true;

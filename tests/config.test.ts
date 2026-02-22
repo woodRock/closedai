@@ -1,5 +1,4 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getConfig } from '../src/utils/config';
 import * as fs from 'fs';
 import * as yaml from 'js-yaml';
 
@@ -28,6 +27,7 @@ describe('Config Unit Tests', () => {
   it('should return cached config on subsequent calls', async () => {
     const { getConfig } = await import('../src/utils/config');
     const mockConfig = { model: { name: 'gemini-pro' } };
+    (fs.readFileSync as any).mockReturnValue('dummy');
     (yaml.load as any).mockReturnValue(mockConfig);
 
     const config1 = getConfig();
@@ -38,6 +38,9 @@ describe('Config Unit Tests', () => {
   });
 
   it('should throw error if config loading fails', async () => {
+    // Silence console.error for this test
+    vi.spyOn(console, 'error').mockImplementation(() => {});
+    
     const { getConfig } = await import('../src/utils/config');
     (fs.readFileSync as any).mockImplementation(() => {
       throw new Error('File not found');
