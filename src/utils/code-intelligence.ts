@@ -1,4 +1,4 @@
-import Parser from 'web-tree-sitter';
+import { Parser, Language } from 'web-tree-sitter';
 import * as path from 'path';
 import * as fs from 'fs';
 
@@ -26,7 +26,7 @@ async function getLanguage(extension: string) {
   if (!fs.existsSync(wasmPath)) {
     throw new Error(`WASM file for ${extension} not found at ${wasmPath}`);
   }
-  return await Parser.Language.load(wasmPath);
+  return await Language.load(wasmPath);
 }
 
 export interface SymbolInfo {
