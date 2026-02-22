@@ -61,7 +61,7 @@ describe('Tools Unit Tests', () => {
   it('search_repo should call execSync with grep', async () => {
     (execSync as any).mockReturnValue(Buffer.from('match1\nmatch2'));
     const result = await executeTool('search_repo', { query: 'search-term' }, repoRoot, chatId, mockSafeSendMessage);
-    expect(execSync).toHaveBeenCalledWith('grep -r "search-term" .', { cwd: repoRoot });
+    expect(execSync).toHaveBeenCalledWith('grep -r  --exclude-dir=.git --exclude-dir=node_modules --exclude-dir=dist "search-term" .', { cwd: repoRoot });
     expect(result).toEqual({ result: 'match1\nmatch2' });
   });
 
@@ -70,6 +70,44 @@ describe('Tools Unit Tests', () => {
     const result = await executeTool('run_shell', { command: 'echo hello' }, repoRoot, chatId, mockSafeSendMessage);
     expect(execSync).toHaveBeenCalledWith('echo hello', { cwd: repoRoot });
     expect(result).toEqual({ result: 'shell output' });
+  });
+
+  it('git_push should call execSync with git push', async () => {
+    const result = await executeTool('git_push', { remote: 'origin', branch: 'main' }, repoRoot, chatId, mockSafeSendMessage);
+    expect(execSync).toHaveBeenCalledWith('git push origin main', { cwd: repoRoot });
+    expect(result).toEqual({ result: 'Success: Pushed to origin main' });
+  });
+
+  it('git_push with run_tests should run npm test first', async () => {
+    const result = await executeTool('git_push', { remote: 'origin', branch: 'main', run_tests: true }, repoRoot, chatId, mockSafeSendMessage);
+    expect(execSync).toHaveBeenCalledWith('npm test', { cwd: repoRoot });
+    expect(execSync).toHaveBeenCalledWith('git push origin main', { cwd: repoRoot });
+    expect(result).toEqual({ result: '✅ Pre-flight tests passed.\nSuccess: Pushed to origin main' });
+  });
+
+  it('git_push should return error if npm test fails', async () => {
+    (execSync as any).mockImplementation((cmd: string) => {
+      if (cmd === 'npm test') throw { stdout: Buffer.from('test failure') };
+      return Buffer.from('');
+    });
+    const result = await executeTool('git_push', { run_tests: true }, repoRoot, chatId, mockSafeSendMessage);
+    expect(result).toEqual({ error: 'Push aborted: Pre-flight tests failed.\ntest failure' });
+  });
+
+  it('pre_flight_check should run npm test', async () => {
+    (execSync as any).mockReturnValue(Buffer.from('all tests passed'));
+    const result = await executeTool('pre_flight_check', {}, repoRoot, chatId, mockSafeSendMessage);
+    expect(execSync).toHaveBeenCalledWith('npm test', { cwd: repoRoot });
+    expect(result).toEqual({ result: '✅ Pre-flight check passed:\n\nall tests passed' });
+  });
+
+  it('pre_flight_check should return error if npm test fails', async () => {
+    (execSync as any).mockImplementation((cmd: string) => {
+      if (cmd === 'npm test') throw { stdout: Buffer.from('test failure') };
+      return Buffer.from('');
+    });
+    const result = await executeTool('pre_flight_check', {}, repoRoot, chatId, mockSafeSendMessage);
+    expect(result).toEqual({ error: '❌ Pre-flight check failed:\n\ntest failure' });
   });
 
   it('should return error if tool fails', async () => {

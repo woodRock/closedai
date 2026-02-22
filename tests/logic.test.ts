@@ -142,6 +142,70 @@ describe('Core Logic Integration Tests', () => {
       expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'I see an image', expect.anything());
     });
 
+    it('should process a PDF document and call Gemini', async () => {
+      const mockGenerateContentStream = vi.fn().mockResolvedValue({
+        stream: (async function* () {
+          yield {
+            candidates: [{ content: { parts: [{ text: 'I see a PDF' }] } }],
+            text: () => 'I see a PDF',
+          };
+        })(),
+        response: Promise.resolve({
+          candidates: [{ content: { parts: [{ text: 'I see a PDF' }] } }],
+          functionCalls: () => [],
+        }),
+      });
+
+      (model.generateContentStream as any).mockImplementation(mockGenerateContentStream);
+
+      const mockPdf = { data: 'base64pdf', mimeType: 'application/pdf' };
+      await processOneMessage('summarize this', 12345, '/tmp/repo', undefined, mockPdf);
+
+      expect(model.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+        contents: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            parts: expect.arrayContaining([
+              expect.objectContaining({ inlineData: { data: 'base64pdf', mimeType: 'application/pdf' } })
+            ])
+          })
+        ])
+      }));
+      expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'I see a PDF', expect.anything());
+    });
+
+    it('should process a voice note and call Gemini', async () => {
+      const mockGenerateContentStream = vi.fn().mockResolvedValue({
+        stream: (async function* () {
+          yield {
+            candidates: [{ content: { parts: [{ text: 'I hear you' }] } }],
+            text: () => 'I hear you',
+          };
+        })(),
+        response: Promise.resolve({
+          candidates: [{ content: { parts: [{ text: 'I hear you' }] } }],
+          functionCalls: () => [],
+        }),
+      });
+
+      (model.generateContentStream as any).mockImplementation(mockGenerateContentStream);
+
+      const mockAudio = { data: 'base64audio', mimeType: 'audio/ogg' };
+      await processOneMessage('', 12345, '/tmp/repo', undefined, mockAudio);
+
+      expect(model.generateContentStream).toHaveBeenCalledWith(expect.objectContaining({
+        contents: expect.arrayContaining([
+          expect.objectContaining({
+            role: 'user',
+            parts: expect.arrayContaining([
+              expect.objectContaining({ inlineData: { data: 'base64audio', mimeType: 'audio/ogg' } })
+            ])
+          })
+        ])
+      }));
+      expect(bot.telegram.sendMessage).toHaveBeenCalledWith(12345, 'I hear you', expect.anything());
+    });
+
     it('should handle tool calls (e.g., run_shell)', async () => {
       const mockGenerateContentStream = vi.fn()
         .mockResolvedValueOnce({
