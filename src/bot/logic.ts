@@ -395,7 +395,9 @@ Ready to assist.`;
       error.message?.includes('429') ||
       error.message?.toLowerCase().includes('overloaded') ||
       error.message?.toLowerCase().includes('service unavailable') ||
-      error.message?.toLowerCase().includes('deadline exceeded');
+      error.message?.toLowerCase().includes('deadline exceeded') ||
+      error.message?.toLowerCase().includes('socket hang up') ||
+      error.message?.toLowerCase().includes('fetch failed');
 
     if (isOverloaded && !messageId) {
       await db.collection('queue').add({

@@ -151,8 +151,15 @@ async function run() {
 
   // Batch Process Mode
   try {
-    // 1. Process one item from queue if exists
-    await checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+    // 1. Process items from queue
+    let initialQueueRetryCount = 0;
+    while (initialQueueRetryCount < 10) { // Limit initial retries to prevent infinite loops if API is down
+      const snapshot = await db.collection('queue').where('status', '==', 'pending').limit(1).get();
+      if (snapshot.empty) break;
+      
+      await checkQueue(repoRoot).catch(err => console.error("Queue Worker Error:", err));
+      initialQueueRetryCount++;
+    }
 
     // 2. Process new updates
     const lastProcessedRef = db.collection('config').doc('last_processed');
@@ -183,6 +190,21 @@ async function run() {
         lastUpdateId = update.update_id;
         // Update immediately to avoid repeating on crash
         await lastProcessedRef.set({ update_id: lastUpdateId });
+      }
+    }
+
+    // 3. If something was added to queue (due to 503s above), wait and try one last time
+    const finalQueueCheck = await db.collection('queue').where('status', '==', 'pending').limit(1).get();
+    if (!finalQueueCheck.empty) {
+      logInstruction(0, 'INFO', 'Queue is not empty. Waiting 60s for a final retry attempt...');
+      await new Promise(resolve => setTimeout(resolve, 60000));
+      
+      let retryCount = 0;
+      while (retryCount < 5) { // Try up to 5 more items
+        const snap = await db.collection('queue').where('status', '==', 'pending').limit(1).get();
+        if (snap.empty) break;
+        await checkQueue(repoRoot).catch(() => {});
+        retryCount++;
       }
     }
     
