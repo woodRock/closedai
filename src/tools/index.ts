@@ -180,13 +180,22 @@ export const toolDefinitions = [
       },
       {
         name: "git_push",
-        description: "Update remote refs.",
+        description: "Update remote refs. Optionally runs a pre-flight check (tests).",
         parameters: {
           type: SchemaType.OBJECT,
           properties: {
             remote: { type: SchemaType.STRING, description: "Remote name (default: origin)." },
-            branch: { type: SchemaType.STRING, description: "Branch name (default: current)." }
+            branch: { type: SchemaType.STRING, description: "Branch name (default: current)." },
+            run_tests: { type: SchemaType.BOOLEAN, description: "Whether to run npm test before pushing." }
           }
+        }
+      },
+      {
+        name: "pre_flight_check",
+        description: "Run tests and linting to ensure code quality.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {}
         }
       },
       {
@@ -446,9 +455,29 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
     } else if (normalizedName === "git_push") {
       const remote = args.remote || "origin";
       const branch = args.branch || "HEAD";
+      
+      let preFlightResult = "";
+      if (args.run_tests) {
+        try {
+          logInstruction(chatId, 'CHECK', 'Running pre-push tests...');
+          execSync("npm test", { cwd: activeRoot });
+          preFlightResult = "✅ Pre-flight tests passed.\n";
+        } catch (e: any) {
+          throw new Error(`Push aborted: Pre-flight tests failed.\n${e.stdout?.toString() || e.message}`);
+        }
+      }
+
       execSync(`git push ${remote} ${branch}`, { cwd: activeRoot });
-      content = { result: `Success: Pushed to ${remote} ${branch}` };
+      content = { result: `${preFlightResult}Success: Pushed to ${remote} ${branch}` };
       logInstruction(chatId, 'GIT', `push ${remote} ${branch}`);
+    } else if (normalizedName === "pre_flight_check") {
+      try {
+        const testOutput = execSync("npm test", { cwd: activeRoot }).toString();
+        content = { result: `✅ Pre-flight check passed:\n\n${testOutput}` };
+      } catch (e: any) {
+        content = { error: `❌ Pre-flight check failed:\n\n${e.stdout?.toString() || e.message}` };
+      }
+      logInstruction(chatId, 'CHECK', 'pre-flight');
     } else if (normalizedName === "git_checkout") {
       const flag = args.create ? "-b" : "";
       execSync(`git checkout ${flag} ${args.branch}`, { cwd: activeRoot });
