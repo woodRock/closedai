@@ -354,7 +354,7 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
   const activeRoot = process.env.WORKSPACE_DIR ? path.resolve(process.env.WORKSPACE_DIR) : repoRoot;
   
   try {
-    } else if (normalizedName === "get_file_outline") {
+    if (normalizedName === "get_file_outline") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);
       const fileContent = fs.readFileSync(fullPath, "utf-8");
