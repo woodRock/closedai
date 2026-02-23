@@ -302,7 +302,8 @@ Ready to assist.`;
 
       const functionResponses = [];
       for (const call of functionCalls) {
-        const { name, args } = call;
+        const { name } = call;
+        const args = call.args as any;
         const normalizedName = name.replace(/^default_api:/, '');
         
         let actionMsg = `🛠️ *Executing:* \`${normalizedName}\``;
@@ -437,6 +438,7 @@ export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
     .get();
   if (snapshot.empty) return;
   const doc = snapshot.docs[0];
+  if (!doc) return;
   const data = doc.data();
   await doc.ref.update({ 
     status: 'processing', 

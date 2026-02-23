@@ -160,7 +160,7 @@ async function run() {
 
     try {
       logInstruction(0, 'INFO', 'Starting bot in polling mode...');
-      await bot.launch({ handlerTimeout: 86400000 });
+      await bot.launch();
     } catch (err: any) {
       if (err.message?.includes('409: Conflict')) {
         logInstruction(0, 'INFO', 'Conflict: Another bot instance is already polling. Skipping...');

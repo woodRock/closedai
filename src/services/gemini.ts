@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { toolDefinitions } from "../tools";
-import { getConfig } from "../utils/config";
+import { toolDefinitions } from "../tools/index.js";
+import { getConfig } from "../utils/config.js";
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? "");
 const config = getConfig();

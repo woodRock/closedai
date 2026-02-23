@@ -1,4 +1,5 @@
 import { SchemaType } from '@google/generative-ai';
+import type { Tool } from '@google/generative-ai';
 import * as fs from 'fs';
 import * as path from 'path';
 import { execSync } from 'child_process';
@@ -8,7 +9,7 @@ import { decode } from 'html-entities';
 
 import { getFileOutline } from '../utils/code-intelligence.js';
 
-export const toolDefinitions = [
+export const toolDefinitions: Tool[] = [
   {
     functionDeclarations: [
       {
@@ -548,23 +549,24 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       let match;
       while ((match = resultRegex.exec(text)) !== null && results.length < 5) {
         const block = match[1];
+        if (!block) continue;
         const titleMatch = titleRegex.exec(block);
         const snippetMatch = snippetRegex.exec(block);
         
-        if (titleMatch) {
+        if (titleMatch && titleMatch[1]) {
           let rawUrl = titleMatch[1];
           // Handle DDG redirect URLs
           if (rawUrl.includes('uddg=')) {
             const urlMatch = rawUrl.match(/uddg=([^&]+)/);
-            if (urlMatch) {
+            if (urlMatch && urlMatch[1]) {
               rawUrl = decodeURIComponent(urlMatch[1]);
             }
           }
 
           results.push({
-            title: decode(titleMatch[2].replace(/<[^>]*>/g, '').trim()),
+            title: decode(titleMatch[2]?.replace(/<[^>]*>/g, '').trim() || ''),
             url: rawUrl,
-            content: snippetMatch ? decode(snippetMatch[1].replace(/<[^>]*>/g, '').trim()) : ''
+            content: (snippetMatch && snippetMatch[1]) ? decode(snippetMatch[1].replace(/<[^>]*>/g, '').trim()) : ''
           });
         }
       }

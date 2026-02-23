@@ -73,9 +73,15 @@ export async function getFileOutline(filePath: string, content: string): Promise
 
   parser.setLanguage(lang);
   const tree = parser.parse(content);
+  if (!tree) {
+    throw new Error('Failed to parse content');
+  }
 
   try {
     const wasmFile = LANG_WASM_MAP[ext];
+    if (!wasmFile) {
+       throw new Error(`WASM file for ${ext} not found`);
+    }
     const queryString = LANG_QUERY_MAP[wasmFile];
     
     if (!queryString) {
@@ -85,15 +91,14 @@ export async function getFileOutline(filePath: string, content: string): Promise
 
     const query = new Query(lang, queryString);
     const captures = query.captures(tree.rootNode);
-    console.log('Captures length:', captures.length);
     const symbols: SymbolInfo[] = [];
 
     // Group captures by their 'symbol' node
-    const symbolMap = new Map<any, Partial<SymbolInfo>>();
+    const symbolMap = new Map<number, Partial<SymbolInfo>>();
 
     for (const capture of captures) {
       if (capture.name === 'symbol') {
-        symbolMap.set(capture.node, {
+        symbolMap.set(capture.node.id, {
           type: capture.node.type,
           start: { row: capture.node.startPosition.row, column: capture.node.startPosition.column },
           end: { row: capture.node.endPosition.row, column: capture.node.endPosition.column },
@@ -103,21 +108,17 @@ export async function getFileOutline(filePath: string, content: string): Promise
 
     for (const capture of captures) {
       if (capture.name === 'name') {
-        console.log('Found name:', capture.node.text);
         // Find the parent symbol node
         let parent = capture.node.parent;
         while (parent) {
-          if (symbolMap.has(parent)) break;
+          if (parent.id !== undefined && symbolMap.has(parent.id)) break;
           parent = parent.parent;
         }
-        if (parent) {
-          console.log('Found parent for:', capture.node.text);
-          const symbol = symbolMap.get(parent);
+        if (parent && parent.id !== undefined) {
+          const symbol = symbolMap.get(parent.id);
           if (symbol) {
             symbol.name = capture.node.text;
           }
-        } else {
-          console.log('No parent found for:', capture.node.text);
         }
       }
     }
