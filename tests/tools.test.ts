@@ -3,6 +3,17 @@ import * as fs from 'fs';
 import { execSync } from 'child_process';
 import { executeTool } from '../src/tools/index';
 
+vi.mock('../src/services/firebase.js', () => ({
+  db: {
+    listCollections: vi.fn(),
+    collection: vi.fn(() => ({
+      limit: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      get: vi.fn(),
+    })),
+  },
+}));
+
 vi.mock('child_process', () => ({
   execSync: vi.fn(),
 }));
@@ -192,6 +203,70 @@ describe('Tools Unit Tests', () => {
     it('format_file should return error for unsupported extension', async () => {
       const result = await executeTool('format_file', { path: 'test.unknown' }, repoRoot, chatId, mockSafeSendMessage);
       expect(result).toEqual({ error: 'No formatting tool found for extension .unknown' });
+    });
+  });
+
+  describe('Integration & Database Tools', () => {
+    it('http_request should make a fetch call', async () => {
+      (global.fetch as any).mockResolvedValue({
+        ok: true,
+        status: 200,
+        statusText: 'OK',
+        headers: new Map([['content-type', 'application/json']]),
+        text: async () => JSON.stringify({ success: true })
+      });
+
+      const result = await executeTool('http_request', { url: 'https://api.example.com/test' }, repoRoot, chatId, mockSafeSendMessage);
+      
+      expect(global.fetch).toHaveBeenCalledWith('https://api.example.com/test', expect.objectContaining({ method: 'GET' }));
+      const parsed = JSON.parse(result.result);
+      expect(parsed.status).toBe(200);
+      expect(parsed.data.success).toBe(true);
+    });
+
+    it('db_list_collections should list collection IDs', async () => {
+      const { db } = await import('../src/services/firebase.js');
+      (db.listCollections as any).mockResolvedValue([{ id: 'users' }, { id: 'messages' }]);
+
+      const result = await executeTool('db_list_collections', {}, repoRoot, chatId, mockSafeSendMessage);
+      expect(result).toEqual({ result: 'users\nmessages' });
+    });
+
+    it('db_get_collection_schema should return inferred schema', async () => {
+      const { db } = await import('../src/services/firebase.js');
+      const mockSnapshot = [
+        { data: () => ({ name: 'John', age: 30 }) }
+      ];
+      (db.collection as any).mockReturnValue({
+        limit: vi.fn().mockReturnThis(),
+        get: vi.fn().mockResolvedValue(mockSnapshot)
+      });
+
+      const result = await executeTool('db_get_collection_schema', { collection: 'users' }, repoRoot, chatId, mockSafeSendMessage);
+      const schema = JSON.parse(result.result);
+      expect(schema.name).toBe('string');
+      expect(schema.age).toBe('number');
+    });
+
+    it('db_query_collection should return documents', async () => {
+      const { db } = await import('../src/services/firebase.js');
+      const mockSnapshot = [
+        { id: '1', data: () => ({ text: 'hello' }) }
+      ];
+      (db.collection as any).mockReturnValue({
+        where: vi.fn().mockReturnThis(),
+        limit: vi.fn().mockReturnThis(),
+        get: vi.fn().mockResolvedValue(mockSnapshot)
+      });
+
+      const result = await executeTool('db_query_collection', { 
+        collection: 'messages', 
+        where: [{ field: 'text', op: '==', value: 'hello' }] 
+      }, repoRoot, chatId, mockSafeSendMessage);
+      
+      const results = JSON.parse(result.result);
+      expect(results[0].id).toBe('1');
+      expect(results[0].text).toBe('hello');
     });
   });
 });

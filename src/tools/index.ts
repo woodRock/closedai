@@ -8,6 +8,7 @@ import pc from 'picocolors';
 import { decode } from 'html-entities';
 
 import { getFileOutline } from '../utils/code-intelligence.js';
+import { db } from '../services/firebase.js';
 
 export const toolDefinitions: Tool[] = [
   {
@@ -327,6 +328,63 @@ export const toolDefinitions: Tool[] = [
             query: { type: SchemaType.STRING, description: "The search query." }
           },
           required: ["query"]
+        }
+      },
+      {
+        name: "http_request",
+        description: "Make a structured HTTP request.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            url: { type: SchemaType.STRING, description: "The URL to request." },
+            method: { type: SchemaType.STRING, description: "The HTTP method (GET, POST, etc.). Default is GET." },
+            headers: { type: SchemaType.OBJECT, description: "Optional request headers." },
+            body: { type: SchemaType.STRING, description: "Optional request body." }
+          },
+          required: ["url"]
+        }
+      },
+      {
+        name: "db_list_collections",
+        description: "List all top-level Firestore collections.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {}
+        }
+      },
+      {
+        name: "db_get_collection_schema",
+        description: "Infer the schema of a collection by inspecting sample documents.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            collection: { type: SchemaType.STRING, description: "The name of the collection." }
+          },
+          required: ["collection"]
+        }
+      },
+      {
+        name: "db_query_collection",
+        description: "Query a Firestore collection with basic filters.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            collection: { type: SchemaType.STRING, description: "The name of the collection." },
+            limit: { type: SchemaType.NUMBER, description: "Max number of documents to return (default 10)." },
+            where: {
+              type: SchemaType.ARRAY,
+              items: {
+                type: SchemaType.OBJECT,
+                properties: {
+                  field: { type: SchemaType.STRING },
+                  op: { type: SchemaType.STRING, description: "Operation: ==, >, <, etc." },
+                  value: { type: SchemaType.STRING }
+                }
+              },
+              description: "Optional filters."
+            }
+          },
+          required: ["collection"]
         }
       }
     ]
@@ -831,6 +889,58 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
           });
         }
       }
+      content = { result: JSON.stringify(results, null, 2) };
+    } else if (normalizedName === "http_request") {
+      const { url, method = 'GET', headers = {}, body } = args;
+      logInstruction(chatId, 'HTTP', `${method} ${url}`);
+      const response = await fetch(url, {
+        method,
+        headers,
+        body: body ? (typeof body === 'string' ? body : JSON.stringify(body)) : undefined
+      });
+      const resHeaders: any = {};
+      response.headers.forEach((v, k) => resHeaders[k] = v);
+      const resText = await response.text();
+      let resData;
+      try {
+        resData = JSON.parse(resText);
+      } catch (e) {
+        resData = resText;
+      }
+      content = {
+        result: JSON.stringify({
+          status: response.status,
+          statusText: response.statusText,
+          headers: resHeaders,
+          data: resData
+        }, null, 2)
+      };
+    } else if (normalizedName === "db_list_collections") {
+      logInstruction(chatId, 'DB', 'list_collections');
+      const collections = await db.listCollections();
+      content = { result: collections.map(c => c.id).join('\n') };
+    } else if (normalizedName === "db_get_collection_schema") {
+      const colName = args.collection;
+      logInstruction(chatId, 'DB', `get_schema ${colName}`);
+      const snapshot = await db.collection(colName).limit(5).get();
+      const schema: any = {};
+      snapshot.forEach(doc => {
+        const data = doc.data();
+        for (const key in data) {
+          schema[key] = typeof data[key];
+        }
+      });
+      content = { result: JSON.stringify(schema, null, 2) };
+    } else if (normalizedName === "db_query_collection") {
+      const { collection, limit = 10, where = [] } = args;
+      logInstruction(chatId, 'DB', `query ${collection}`);
+      let query: any = db.collection(collection);
+      for (const filter of where) {
+        query = query.where(filter.field, filter.op, filter.value);
+      }
+      const snapshot = await query.limit(limit).get();
+      const results: any[] = [];
+      snapshot.forEach((doc: any) => results.push({ id: doc.id, ...doc.data() }));
       content = { result: JSON.stringify(results, null, 2) };
     } else {
       content = { error: `Unknown tool: ${name}` };
