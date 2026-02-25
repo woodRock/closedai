@@ -262,6 +262,40 @@ export const toolDefinitions: Tool[] = [
         }
       },
       {
+        name: "format_file",
+        description: "Format a file using project-specific tools (e.g., Prettier).",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "lint_file",
+        description: "Lint a file and optionally fix issues.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the file." },
+            fix: { type: SchemaType.BOOLEAN, description: "Whether to attempt to fix linting issues." }
+          },
+          required: ["path"]
+        }
+      },
+      {
+        name: "run_tests",
+        description: "Run tests, optionally filtered by file or test name pattern.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            path: { type: SchemaType.STRING, description: "Relative path to the test file." },
+            pattern: { type: SchemaType.STRING, description: "Regex pattern of test names to run." }
+          }
+        }
+      },
+      {
         name: "git_checkout",
         description: "Switch branches or restore working tree files.",
         parameters: {
@@ -669,6 +703,75 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
         content = { error: `❌ Pre-flight check failed:\n\n${e.stdout?.toString() || e.message}` };
       }
       logInstruction(chatId, 'CHECK', 'pre-flight');
+    } else if (normalizedName === "format_file") {
+      const p = args.path;
+      const fullPath = sanitizePath(activeRoot, p);
+      const ext = path.extname(p);
+      let command = "";
+      
+      if (['.ts', '.tsx', '.js', '.jsx', '.json', '.css', '.md'].includes(ext)) {
+        command = `npx prettier --write "${p}"`;
+      } else if (ext === '.py') {
+        command = `black "${p}"`;
+      } else if (ext === '.go') {
+        command = `go fmt "${p}"`;
+      } else if (ext === '.rs') {
+        command = `rustfmt "${p}"`;
+      }
+
+      if (command) {
+        try {
+          const output = execSync(command, { cwd: activeRoot }).toString();
+          content = { result: `Success: Formatted ${p}\n${output}` };
+        } catch (e: any) {
+          content = { error: `Formatting failed: ${e.stdout?.toString() || e.message}` };
+        }
+      } else {
+        content = { error: `No formatting tool found for extension ${ext}` };
+      }
+      logInstruction(chatId, 'FORMAT', p);
+    } else if (normalizedName === "lint_file") {
+      const p = args.path;
+      const fix = args.fix;
+      const fullPath = sanitizePath(activeRoot, p);
+      const ext = path.extname(p);
+      let command = "";
+
+      if (['.ts', '.tsx', '.js', '.jsx'].includes(ext)) {
+        command = `npx eslint ${fix ? '--fix' : ''} "${p}"`;
+      } else if (ext === '.py') {
+        command = `pylint "${p}"`;
+      }
+
+      if (command) {
+        try {
+          const output = execSync(command, { cwd: activeRoot }).toString();
+          content = { result: `Linting passed for ${p}\n${output}` };
+        } catch (e: any) {
+          content = { error: `Linting failed: ${e.stdout?.toString() || e.message}` };
+        }
+      } else {
+        content = { error: `No linting tool found for extension ${ext}` };
+      }
+      logInstruction(chatId, 'LINT', p);
+    } else if (normalizedName === "run_tests") {
+      const p = args.path || '';
+      const pattern = args.pattern || '';
+      let command = 'npm test';
+      
+      if (p || pattern) {
+        command += ' --';
+        if (p) command += ` ${p}`;
+        if (pattern) command += ` -t "${pattern}"`;
+      }
+
+      try {
+        const output = execSync(command, { cwd: activeRoot }).toString();
+        content = { result: `Tests passed:\n\n${output}` };
+      } catch (e: any) {
+        content = { error: `Tests failed:\n\n${e.stdout?.toString() || e.message}` };
+      }
+      logInstruction(chatId, 'TEST', `${p} ${pattern}`.trim());
     } else if (normalizedName === "git_checkout") {
       const flag = args.create ? "-b" : "";
       execSync(`git checkout ${flag} ${args.branch}`, { cwd: activeRoot });
