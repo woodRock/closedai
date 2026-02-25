@@ -93,7 +93,9 @@ async function getChatHistory(chatId: number, limit = 20) {
     if (parts.length === 0) continue
 
     let role = data.role
-    const hasFunctionResponse = parts.some((p: { functionResponse?: unknown }) => p.functionResponse)
+    const hasFunctionResponse = parts.some(
+      (p: { functionResponse?: unknown }) => p.functionResponse,
+    )
     const hasFunctionCall = parts.some((p: { functionCall?: unknown }) => p.functionCall)
 
     if (hasFunctionResponse) {

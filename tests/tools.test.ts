@@ -3,6 +3,15 @@ import * as fs from 'fs'
 import { execSync } from 'child_process'
 import { executeTool } from '../src/tools/index'
 
+vi.mock('../src/utils/config.js', () => ({
+  getConfig: vi.fn(() => ({
+    model: { name: 'gemini-pro', temperature: 0.7 },
+    timeout: 60000,
+    chat: { history_limit: 10 },
+    log: { limit: 5 },
+  })),
+}))
+
 vi.mock('../src/services/firebase.js', () => ({
   db: {
     listCollections: vi.fn(),
@@ -36,7 +45,7 @@ describe('Tools Unit Tests', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     process.env.TAVILY_API_KEY = 'test-key'
-    // @ts-ignore
+    // @ts-expect-error: fetch is not defined in global scope
     global.fetch = vi.fn()
   })
 
