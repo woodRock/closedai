@@ -1,51 +1,51 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as fs from 'fs';
-import * as yaml from 'js-yaml';
+import { describe, it, expect, vi, beforeEach } from 'vitest'
+import * as fs from 'fs'
+import * as yaml from 'js-yaml'
 
-vi.mock('fs');
-vi.mock('js-yaml');
+vi.mock('fs')
+vi.mock('js-yaml')
 
 describe('Config Unit Tests', () => {
   beforeEach(() => {
-    vi.resetModules();
-    vi.clearAllMocks();
-  });
+    vi.resetModules()
+    vi.clearAllMocks()
+  })
 
   it('should load and return config', async () => {
-    const { getConfig } = await import('../src/utils/config');
-    const mockYaml = 'model:\n  name: gemini-pro';
-    const mockConfig = { model: { name: 'gemini-pro' } };
-    
-    (fs.readFileSync as any).mockReturnValue(mockYaml);
-    (yaml.load as any).mockReturnValue(mockConfig);
+    const { getConfig } = await import('../src/utils/config')
+    const mockYaml = 'model:\n  name: gemini-pro'
+    const mockConfig = { model: { name: 'gemini-pro' } }
 
-    const config = getConfig();
-    expect(config).toEqual(mockConfig);
-    expect(fs.readFileSync).toHaveBeenCalled();
-  });
+    ;(fs.readFileSync as any).mockReturnValue(mockYaml)
+    ;(yaml.load as any).mockReturnValue(mockConfig)
+
+    const config = getConfig()
+    expect(config).toEqual(mockConfig)
+    expect(fs.readFileSync).toHaveBeenCalled()
+  })
 
   it('should return cached config on subsequent calls', async () => {
-    const { getConfig } = await import('../src/utils/config');
-    const mockConfig = { model: { name: 'gemini-pro' } };
-    (fs.readFileSync as any).mockReturnValue('dummy');
-    (yaml.load as any).mockReturnValue(mockConfig);
+    const { getConfig } = await import('../src/utils/config')
+    const mockConfig = { model: { name: 'gemini-pro' } }
+    ;(fs.readFileSync as any).mockReturnValue('dummy')
+    ;(yaml.load as any).mockReturnValue(mockConfig)
 
-    const config1 = getConfig();
-    const config2 = getConfig();
-    
-    expect(config1).toBe(config2);
-    expect(fs.readFileSync).toHaveBeenCalledTimes(1);
-  });
+    const config1 = getConfig()
+    const config2 = getConfig()
+
+    expect(config1).toBe(config2)
+    expect(fs.readFileSync).toHaveBeenCalledTimes(1)
+  })
 
   it('should throw error if config loading fails', async () => {
     // Silence console.error for this test
-    vi.spyOn(console, 'error').mockImplementation(() => {});
-    
-    const { getConfig } = await import('../src/utils/config');
-    (fs.readFileSync as any).mockImplementation(() => {
-      throw new Error('File not found');
-    });
+    vi.spyOn(console, 'error').mockImplementation(() => {})
 
-    expect(() => getConfig()).toThrow('File not found');
-  });
-});
+    const { getConfig } = await import('../src/utils/config')
+    ;(fs.readFileSync as any).mockImplementation(() => {
+      throw new Error('File not found')
+    })
+
+    expect(() => getConfig()).toThrow('File not found')
+  })
+})

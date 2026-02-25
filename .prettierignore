@@ -1,0 +1,7 @@
+node_modules
+dist
+coverage
+docs/dist
+package-lock.json
+service-account.json
+.bot.lock

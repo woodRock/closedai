@@ -1,7 +1,7 @@
-import DocsPage from './components/DocsPage';
+import DocsPage from './components/DocsPage'
 
 function App() {
-  return <DocsPage />;
+  return <DocsPage />
 }
 
-export default App;
+export default App

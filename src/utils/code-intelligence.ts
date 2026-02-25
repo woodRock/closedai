@@ -1,16 +1,16 @@
-import { Parser, Language, Query } from 'web-tree-sitter';
-import * as path from 'path';
-import * as fs from 'fs';
+import { Parser, Language, Query } from 'web-tree-sitter'
+import * as path from 'path'
+import * as fs from 'fs'
 
-let isInitialized = false;
-let parser: Parser | null = null;
-const langCache: Record<string, Language> = {};
+let isInitialized = false
+let parser: Parser | null = null
+const langCache: Record<string, Language> = {}
 
 async function initialize() {
-  if (isInitialized) return;
-  await Parser.init();
-  parser = new Parser();
-  isInitialized = true;
+  if (isInitialized) return
+  await Parser.init()
+  parser = new Parser()
+  isInitialized = true
 }
 
 const LANG_WASM_MAP: Record<string, string> = {
@@ -27,7 +27,7 @@ const LANG_WASM_MAP: Record<string, string> = {
   '.cc': 'tree-sitter-cpp.wasm',
   '.c': 'tree-sitter-c.wasm',
   '.h': 'tree-sitter-c.wasm',
-};
+}
 
 const LANG_QUERY_MAP: Record<string, string> = {
   'tree-sitter-typescript.wasm': `
@@ -74,66 +74,66 @@ const LANG_QUERY_MAP: Record<string, string> = {
     (struct_specifier name: (type_identifier) @name) @symbol
     (type_definition declarator: (type_identifier) @name) @symbol
   `,
-};
+}
 
 async function getLanguage(extension: string) {
-  const wasmFile = LANG_WASM_MAP[extension];
-  if (!wasmFile) return null;
+  const wasmFile = LANG_WASM_MAP[extension]
+  if (!wasmFile) return null
 
-  if (langCache[wasmFile]) return langCache[wasmFile];
+  if (langCache[wasmFile]) return langCache[wasmFile]
 
-  const wasmPath = path.join(process.cwd(), 'vendor', 'tree-sitter', wasmFile);
+  const wasmPath = path.join(process.cwd(), 'vendor', 'tree-sitter', wasmFile)
   if (!fs.existsSync(wasmPath)) {
-    throw new Error(`WASM file for ${extension} not found at ${wasmPath}`);
+    throw new Error(`WASM file for ${extension} not found at ${wasmPath}`)
   }
-  
-  const lang = await Language.load(wasmPath);
-  langCache[wasmFile] = lang;
-  return lang;
+
+  const lang = await Language.load(wasmPath)
+  langCache[wasmFile] = lang
+  return lang
 }
 
 export interface SymbolInfo {
-  name: string;
-  type: string;
-  start: { row: number; column: number };
-  end: { row: number; column: number };
-  startIndex: number;
-  endIndex: number;
-  children?: SymbolInfo[];
+  name: string
+  type: string
+  start: { row: number; column: number }
+  end: { row: number; column: number }
+  startIndex: number
+  endIndex: number
+  children?: SymbolInfo[]
 }
 
 export async function getFileOutline(filePath: string, content: string): Promise<SymbolInfo[]> {
-  await initialize();
-  const ext = path.extname(filePath);
-  const lang = await getLanguage(ext);
+  await initialize()
+  const ext = path.extname(filePath)
+  const lang = await getLanguage(ext)
   if (!lang || !parser) {
-    throw new Error(`Unsupported language for file: ${filePath}`);
+    throw new Error(`Unsupported language for file: ${filePath}`)
   }
 
-  parser.setLanguage(lang);
-  const tree = parser.parse(content);
+  parser.setLanguage(lang)
+  const tree = parser.parse(content)
   if (!tree) {
-    throw new Error('Failed to parse content');
+    throw new Error('Failed to parse content')
   }
 
   try {
-    const wasmFile = LANG_WASM_MAP[ext];
+    const wasmFile = LANG_WASM_MAP[ext]
     if (!wasmFile) {
-       throw new Error(`WASM file for ${ext} not found`);
+      throw new Error(`WASM file for ${ext} not found`)
     }
-    const queryString = LANG_QUERY_MAP[wasmFile];
-    
+    const queryString = LANG_QUERY_MAP[wasmFile]
+
     if (!queryString) {
       // Fallback to basic traversal if no query defined
-      return getLegacyOutline(tree.rootNode);
+      return getLegacyOutline(tree.rootNode)
     }
 
-    const query = new Query(lang, queryString);
-    const captures = query.captures(tree.rootNode);
-    const symbols: SymbolInfo[] = [];
+    const query = new Query(lang, queryString)
+    const captures = query.captures(tree.rootNode)
+    const symbols: SymbolInfo[] = []
 
     // Group captures by their 'symbol' node
-    const symbolMap = new Map<any, Partial<SymbolInfo>>();
+    const symbolMap = new Map<any, Partial<SymbolInfo>>()
 
     for (const capture of captures) {
       if (capture.name === 'symbol') {
@@ -143,24 +143,24 @@ export async function getFileOutline(filePath: string, content: string): Promise
           end: { row: capture.node.endPosition.row, column: capture.node.endPosition.column },
           startIndex: capture.node.startIndex,
           endIndex: capture.node.endIndex,
-        });
+        })
       }
     }
 
     for (const capture of captures) {
       if (capture.name === 'name') {
         // Find the parent symbol node
-        let parent = capture.node.parent;
+        let parent = capture.node.parent
         while (parent) {
           if (symbolMap.has(parent.id)) {
-            break;
+            break
           }
-          parent = parent.parent;
+          parent = parent.parent
         }
         if (parent) {
-          const symbol = symbolMap.get(parent.id);
+          const symbol = symbolMap.get(parent.id)
           if (symbol) {
-            symbol.name = capture.node.text;
+            symbol.name = capture.node.text
           }
         }
       }
@@ -168,18 +168,18 @@ export async function getFileOutline(filePath: string, content: string): Promise
 
     for (const symbol of symbolMap.values()) {
       if (symbol.name) {
-        symbols.push(symbol as SymbolInfo);
+        symbols.push(symbol as SymbolInfo)
       }
     }
 
-    return symbols;
+    return symbols
   } finally {
-    tree.delete();
+    tree.delete()
   }
 }
 
 function getLegacyOutline(rootNode: any): SymbolInfo[] {
-  const symbols: SymbolInfo[] = [];
+  const symbols: SymbolInfo[] = []
 
   function traverse(node: any) {
     if (
@@ -189,7 +189,8 @@ function getLegacyOutline(rootNode: any): SymbolInfo[] {
       node.type === 'interface_declaration' ||
       node.type === 'function_item'
     ) {
-      const nameNode = node.childForFieldName('name') || node.children.find((c: any) => c.type === 'identifier');
+      const nameNode =
+        node.childForFieldName('name') || node.children.find((c: any) => c.type === 'identifier')
       if (nameNode) {
         symbols.push({
           name: nameNode.text,
@@ -198,17 +199,16 @@ function getLegacyOutline(rootNode: any): SymbolInfo[] {
           end: { row: node.endPosition.row, column: node.endPosition.column },
           startIndex: node.startIndex,
           endIndex: node.endIndex,
-          children: []
-        });
+          children: [],
+        })
       }
     }
 
     for (const child of node.children) {
-      traverse(child);
+      traverse(child)
     }
   }
 
-  traverse(rootNode);
-  return symbols;
+  traverse(rootNode)
+  return symbols
 }
-

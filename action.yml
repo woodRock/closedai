@@ -44,7 +44,7 @@ runs:
         export ALLOWED_TELEGRAM_USER_IDS="${{ inputs.allowed_user_ids }}"
         export UNSAFE_MODE="${{ inputs.unsafe_mode }}"
         export WORKSPACE_DIR="${{ github.workspace }}"
-        
+
         # Run the bot in batch mode (processes pending messages and exits)
         npx tsx bot.ts
       shell: bash

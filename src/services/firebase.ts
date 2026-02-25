@@ -1,18 +1,18 @@
-import { initializeApp, cert } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
-import pc from 'picocolors';
-import 'dotenv/config';
+import { initializeApp, cert } from 'firebase-admin/app'
+import { getFirestore, FieldValue } from 'firebase-admin/firestore'
+import pc from 'picocolors'
+import 'dotenv/config'
 
-const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT?.trim() || '{}';
-let serviceAccount;
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT?.trim() || '{}'
+let serviceAccount
 try {
-  serviceAccount = JSON.parse(serviceAccountString);
+  serviceAccount = JSON.parse(serviceAccountString)
 } catch (e) {
-  console.error(pc.red('❌ FIREBASE_SERVICE_ACCOUNT is not valid JSON.'));
-  process.exit(1);
+  console.error(pc.red('❌ FIREBASE_SERVICE_ACCOUNT is not valid JSON.'))
+  process.exit(1)
 }
 
-const app = initializeApp({ credential: cert(serviceAccount) });
-export const db = getFirestore(app);
-db.settings({ ignoreUndefinedProperties: true });
-export { FieldValue };
+const app = initializeApp({ credential: cert(serviceAccount) })
+export const db = getFirestore(app)
+db.settings({ ignoreUndefinedProperties: true })
+export { FieldValue }

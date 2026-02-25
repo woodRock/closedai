@@ -1,4 +1,4 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 :root {
   font-family: 'Plus Jakarta Sans', system-ui, Avenir, Helvetica, Arial, sans-serif;
@@ -25,7 +25,7 @@ body {
   .glass {
     @apply bg-gray-900/70 backdrop-blur-xl border border-white/10;
   }
-  
+
   .gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400;
   }
