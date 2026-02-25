@@ -145,7 +145,7 @@ async function run() {
 
     bot.on('message', async (ctx) => {
       const msg = ctx.message as any
-      let text = msg.text || msg.caption || ''
+      const text = msg.text || msg.caption || ''
       let media = undefined
 
       if (msg.photo) {
@@ -230,7 +230,7 @@ async function run() {
     for (const update of updates) {
       if ('message' in update) {
         const message = update.message as any
-        let text = message.text || message.caption || ''
+        const text = message.text || message.caption || ''
         let media = undefined
 
         if (message.photo) {

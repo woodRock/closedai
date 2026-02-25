@@ -1,0 +1,195 @@
+
+> closedai@1.0.0 lint
+> eslint .
+
+
+/home/runner/work/closedai/closedai/bot.ts
+   20:17  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+   75:12  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+   75:15  error    Empty block statement                            no-empty
+   86:14  warning  'e' is defined but never used                    @typescript-eslint/no-unused-vars
+   90:16  warning  'ignore' is defined but never used               @typescript-eslint/no-unused-vars
+   90:24  error    Empty block statement                            no-empty
+   98:14  warning  'ignore' is defined but never used               @typescript-eslint/no-unused-vars
+   98:22  error    Empty block statement                            no-empty
+  147:34  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  148:11  error    'text' is never reassigned. Use 'const' instead  prefer-const
+  200:19  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  232:43  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+  233:13  error    'text' is never reassigned. Use 'const' instead  prefer-const
+  310:17  warning  Unexpected any. Specify a different type         @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/index_now.ts
+  2:13  warning  'fs' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/setup.ts
+   30:12  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+   54:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   79:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  120:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  140:15  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/src/bot/bot.ts
+  11:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:12  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/src/bot/commands.ts
+   10:62  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   42:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   67:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   88:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  105:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:13  error    Empty block statement                     no-empty
+  128:13  error    Empty block statement                     no-empty
+  236:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/src/bot/logic.ts
+   10:10  warning  'getConfig' is defined but never used                                             @typescript-eslint/no-unused-vars
+   23:12  warning  'e' is defined but never used                                                     @typescript-eslint/no-unused-vars
+   48:19  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+   63:18  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+   71:48  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+   72:44  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+   83:42  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  111:16  warning  'summarizeHistory' is defined but never used                                      @typescript-eslint/no-unused-vars
+  136:16  warning  'getProjectRules' is defined but never used                                       @typescript-eslint/no-unused-vars
+  171:9   error    This assigned value is not used in subsequent statements                          no-useless-assignment
+  175:46  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  189:20  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  262:31  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  282:28  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  286:37  warning  'final' is assigned a value but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  301:21  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  310:21  error    Empty block statement                                                             no-empty
+  323:36  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  323:71  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  338:17  error    Empty block statement                                                             no-empty
+  349:45  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  378:35  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  465:19  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  478:19  warning  Unexpected any. Specify a different type                                          @typescript-eslint/no-explicit-any
+  557:12  warning  'err' is defined but never used                                                   @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/src/services/firebase.ts
+  10:10  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/src/tools/index.ts
+   602:9   warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   605:3   warning  'safeSendMessage' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+   605:62  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   647:20  warning  'e' is defined but never used                                                      @typescript-eslint/no-unused-vars
+   652:16  warning  'e' is defined but never used                                                      @typescript-eslint/no-unused-vars
+   652:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   681:22  warning  'e' is defined but never used                                                      @typescript-eslint/no-unused-vars
+   681:25  error    Empty block statement                                                              no-empty
+   689:16  warning  'e' is defined but never used                                                      @typescript-eslint/no-unused-vars
+   689:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   750:11  error    'fileContent' is never reassigned. Use 'const' instead                             prefer-const
+   819:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   829:13  warning  'fullPath' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
+   878:21  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   879:11  error    There is no `cause` attached to the symptom error being thrown                     preserve-caught-error
+   892:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   898:13  warning  'fullPath' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
+   916:21  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   926:13  warning  'fullPath' is assigned a value but never used                                      @typescript-eslint/no-unused-vars
+   940:21  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+   961:19  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1037:25  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1043:16  warning  'e' is defined but never used                                                      @typescript-eslint/no-unused-vars
+  1066:21  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1077:18  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1082:22  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1083:30  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+  1128:15  warning  Unexpected any. Specify a different type                                           @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/src/utils/code-intelligence.ts
+  136:31  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  181:37  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  184:27  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  193:66  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/src/utils/helpers.ts
+   8:46  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  11:12  warning  'e' is defined but never used             @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/src/utils/logger.ts
+  16:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/supervisor.ts
+  3:19  warning  'join' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/tests/code-intelligence.test.ts
+  3:13  warning  'fs' is defined but never used    @typescript-eslint/no-unused-vars
+  4:13  warning  'path' is defined but never used  @typescript-eslint/no-unused-vars
+
+/home/runner/work/closedai/closedai/tests/commands.test.ts
+   69:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   78:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   80:16  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  102:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  111:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  121:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  133:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  147:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  150:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  178:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  194:24  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  196:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  221:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  233:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  245:19  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/tests/config.test.ts
+  19:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  20:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  30:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  31:20  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  45:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/tests/list_models.ts
+  16:17  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/tests/logic.test.ts
+    2:13  warning  'fs' is defined but never used            @typescript-eslint/no-unused-vars
+    6:17  warning  'genAI' is defined but never used         @typescript-eslint/no-unused-vars
+  108:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  135:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  211:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  273:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  274:1   error    Delete `⏎`                                prettier/prettier
+  275:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  291:23  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  292:28  error    Delete `⏎`                                prettier/prettier
+  294:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  323:21  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  337:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  354:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  365:26  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  383:40  warning  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/home/runner/work/closedai/closedai/tests/tools.test.ts
+   39:5   error    Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+   56:26  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+   69:25  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  109:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  125:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  165:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  180:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  187:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  196:19  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  217:23  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  250:23  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  266:21  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  282:21  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  295:21  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  308:21  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  337:25  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  364:31  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  379:26  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+  399:26  warning  Unexpected any. Specify a different type                                                                             @typescript-eslint/no-explicit-any
+
+✖ 151 problems (16 errors, 135 warnings)
+  5 errors and 0 warnings potentially fixable with the `--fix` option.
+

@@ -747,7 +747,7 @@ export async function executeTool(
         throw new Error(`File not found: ${p}`)
       }
 
-      let fileContent = fs.readFileSync(fullPath, 'utf-8')
+      const fileContent = fs.readFileSync(fullPath, 'utf-8')
       const outline = await getFileOutline(p, fileContent)
 
       const symbol = outline.find((s) => s.name === symbolName)

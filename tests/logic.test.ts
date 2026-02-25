@@ -271,7 +271,6 @@ describe('Core Logic Integration Tests', () => {
         })
 
       ;(model.generateContentStream as any).mockImplementation(mockGenerateContentStream)
-
       ;(execSync as any).mockImplementation((cmd: string) => {
         if (cmd === 'ls') return Buffer.from('file1\nfile2')
         return Buffer.from('')
@@ -290,7 +289,6 @@ describe('Core Logic Integration Tests', () => {
     it('should handle Gemini 503 errors and queue the message', async () => {
       const error503: any = new Error('Service Unavailable')
       error503.status = 503
-
       ;(model.generateContentStream as any).mockRejectedValue(error503)
 
       await processOneMessage('important task', 12345, '/tmp/repo')
