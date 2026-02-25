@@ -24,6 +24,28 @@ export const toolDefinitions: Tool[] = [
         }
       },
       {
+        name: "find_symbol_definitions",
+        description: "Find definitions of a symbol across the workspace.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            name: { type: SchemaType.STRING, description: "The name of the symbol to find." }
+          },
+          required: ["name"]
+        }
+      },
+      {
+        name: "find_symbol_references",
+        description: "Find references to a symbol across the workspace.",
+        parameters: {
+          type: SchemaType.OBJECT,
+          properties: {
+            name: { type: SchemaType.STRING, description: "The name of the symbol to find references for." }
+          },
+          required: ["name"]
+        }
+      },
+      {
         name: "write_file",
         description: "Create or overwrite a file with specific content.",
         parameters: {
@@ -362,6 +384,73 @@ export async function executeTool(name: string, args: any, repoRoot: string, cha
       const outline = await getFileOutline(p, fileContent);
       content = { result: JSON.stringify(outline, null, 2) };
       logInstruction(chatId, 'OUTLINE', p);
+    } else if (normalizedName === "find_symbol_definitions") {
+      const name = args.name;
+      logInstruction(chatId, 'FIND_DEF', name);
+      try {
+        // Step 1: Search for the name using grep
+        const grepOutput = execSync(`grep -r -l --exclude-dir=.git --exclude-dir=node_modules "${name}" .`, { cwd: activeRoot }).toString();
+        const files = grepOutput.split('\n').filter(f => f.trim() !== '');
+        const results = [];
+
+        for (const file of files) {
+          try {
+            const fullPath = sanitizePath(activeRoot, file);
+            const fileContent = fs.readFileSync(fullPath, "utf-8");
+            const outline = await getFileOutline(file, fileContent);
+            
+            for (const symbol of outline) {
+              if (symbol.name === name) {
+                results.push({
+                  file,
+                  type: symbol.type,
+                  start: symbol.start,
+                  end: symbol.end
+                });
+              }
+            }
+          } catch (e) {
+            // Skip files with unsupported languages or other errors
+          }
+        }
+        content = { result: JSON.stringify(results, null, 2) };
+      } catch (e: any) {
+        content = { result: "[]" };
+      }
+    } else if (normalizedName === "find_symbol_references") {
+      const name = args.name;
+      logInstruction(chatId, 'FIND_REF', name);
+      try {
+        // Search for the name using grep -n to get line numbers
+        const grepOutput = execSync(`grep -r -n --exclude-dir=.git --exclude-dir=node_modules "\\b${name}\\b" .`, { cwd: activeRoot }).toString();
+        const lines = grepOutput.split('\n').filter(l => l.trim() !== '');
+        const results = [];
+
+        for (const line of lines) {
+          const parts = line.split(':');
+          if (parts.length >= 3) {
+            const file = parts[0];
+            const lineNum = parseInt(parts[1]);
+            const context = parts.slice(2).join(':').trim();
+            
+            // Try to filter out definitions if possible
+            let isDefinition = false;
+            try {
+              const fullPath = sanitizePath(activeRoot, file);
+              const fileContent = fs.readFileSync(fullPath, "utf-8");
+              const outline = await getFileOutline(file, fileContent);
+              isDefinition = outline.some(s => s.name === name && (s.start.row + 1) === lineNum);
+            } catch (e) {}
+
+            if (!isDefinition) {
+              results.push({ file, line: lineNum, context });
+            }
+          }
+        }
+        content = { result: JSON.stringify(results, null, 2) };
+      } catch (e: any) {
+        content = { result: "[]" };
+      }
     } else if (normalizedName === "write_file") {
       const p = args.path;
       const fullPath = sanitizePath(activeRoot, p);

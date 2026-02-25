@@ -19,6 +19,14 @@ const LANG_WASM_MAP: Record<string, string> = {
   '.js': 'tree-sitter-javascript.wasm',
   '.jsx': 'tree-sitter-javascript.wasm',
   '.py': 'tree-sitter-python.wasm',
+  '.go': 'tree-sitter-go.wasm',
+  '.rs': 'tree-sitter-rust.wasm',
+  '.java': 'tree-sitter-java.wasm',
+  '.cpp': 'tree-sitter-cpp.wasm',
+  '.hpp': 'tree-sitter-cpp.wasm',
+  '.cc': 'tree-sitter-cpp.wasm',
+  '.c': 'tree-sitter-c.wasm',
+  '.h': 'tree-sitter-c.wasm',
 };
 
 const LANG_QUERY_MAP: Record<string, string> = {
@@ -36,6 +44,36 @@ const LANG_QUERY_MAP: Record<string, string> = {
   'tree-sitter-python.wasm': `
     (class_definition name: (identifier) @name) @symbol
     (function_definition name: (identifier) @name) @symbol
+  `,
+  'tree-sitter-go.wasm': `
+    (function_declaration name: (identifier) @name) @symbol
+    (method_declaration name: (field_identifier) @name) @symbol
+    (type_declaration (type_spec name: (type_identifier) @name)) @symbol
+  `,
+  'tree-sitter-rust.wasm': `
+    (function_item name: (identifier) @name) @symbol
+    (struct_item name: (type_identifier) @name) @symbol
+    (enum_item name: (type_identifier) @name) @symbol
+    (trait_item name: (type_identifier) @name) @symbol
+    (impl_item type: (type_identifier) @name) @symbol
+    (mod_item name: (identifier) @name) @symbol
+  `,
+  'tree-sitter-java.wasm': `
+    (class_declaration name: (identifier) @name) @symbol
+    (method_declaration name: (identifier) @name) @symbol
+    (interface_declaration name: (identifier) @name) @symbol
+    (enum_declaration name: (identifier) @name) @symbol
+  `,
+  'tree-sitter-cpp.wasm': `
+    (class_specifier name: (type_identifier) @name) @symbol
+    (function_definition declarator: (function_declarator declarator: (identifier) @name)) @symbol
+    (struct_specifier name: (type_identifier) @name) @symbol
+    (namespace_definition name: (identifier) @name) @symbol
+  `,
+  'tree-sitter-c.wasm': `
+    (function_definition declarator: (function_declarator declarator: (identifier) @name)) @symbol
+    (struct_specifier name: (type_identifier) @name) @symbol
+    (type_definition declarator: (type_identifier) @name) @symbol
   `,
 };
 
