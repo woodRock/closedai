@@ -1,4 +1,4 @@
-import { getEmbedding } from './src/utils/rag.js';
+import { getEmbedding } from '../src/utils/rag.js';
 
 async function test() {
   console.log('Testing Gemini Embedding...');

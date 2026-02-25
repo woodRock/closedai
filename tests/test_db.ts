@@ -1,4 +1,4 @@
-import { db } from './src/services/firebase.js';
+import { db } from '../src/services/firebase.js';
 
 async function test() {
   console.log('Testing Firestore connection...');
