@@ -1,8 +1,7 @@
 import { embeddingModel } from '../services/gemini.js';
-import { db } from '../services/firebase.js';
+import { db, FieldValue } from '../services/firebase.js';
 import * as fs from 'fs';
 import * as path from 'path';
-import { VectorValue } from 'firebase-admin/firestore';
 
 export interface CodeChunk {
   path: string;
@@ -61,7 +60,7 @@ export async function indexFile(repoRoot: string, relativePath: string) {
     const docRef = collection.doc();
     batch.set(docRef, {
       ...chunk,
-      embedding: VectorValue.create(embedding),
+      embedding: FieldValue.vector(embedding),
       indexedAt: new Date()
     });
   }
@@ -73,7 +72,7 @@ export async function semanticSearch(query: string, limit = 5) {
   const queryEmbedding = await getEmbedding(query);
   const collection = db.collection('code_embeddings');
   
-  const snapshot = await collection.findNearest('embedding', VectorValue.create(queryEmbedding), {
+  const snapshot = await collection.findNearest('embedding', FieldValue.vector(queryEmbedding), {
     limit: limit,
     distanceMeasure: 'COSINE'
   }).get();
