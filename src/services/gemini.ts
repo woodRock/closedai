@@ -16,6 +16,6 @@ export const model = genAI.getGenerativeModel(
   { timeout: config.timeout }
 );
 
-export const embeddingModel = genAI.getGenerativeModel({ model: "embedding-001" });
+export const embeddingModel = genAI.getGenerativeModel({ model: "text-embedding-004" }, { apiVersion: 'v1' });
 
 export { genAI };
