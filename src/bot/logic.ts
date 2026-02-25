@@ -33,8 +33,8 @@ export async function safeSendMessage(chatId: number, text: string) {
   } catch {
     try {
       return await bot.telegram.sendMessage(chatId, text)
-    } catch (e2) {
-      logInstruction(chatId, 'ERROR', `Failed to send message: ${e2}`)
+    } catch {
+      logInstruction(chatId, 'ERROR', `Failed to send message`)
     }
   }
 }
@@ -62,8 +62,9 @@ ${diff.substring(0, 15000)}`
     const text = result.response.text().trim()
     if (!text) throw new Error('Empty response from Gemini')
     return text.replace(/^["']|["']$/g, '').replace(/^Commit:\s*/i, '')
-  } catch (error: any) {
-    logInstruction(chatId, 'ERROR', `Error generating commit message: ${error.message}`)
+  } catch (error: unknown) {
+    const errorMessage = error instanceof Error ? error.message : String(error)
+    logInstruction(chatId, 'ERROR', `Error generating commit message: ${errorMessage}`)
     return 'ClosedAI: Automatic update'
   }
 }
@@ -84,7 +85,7 @@ async function getChatHistory(chatId: number, limit = 20) {
     .get()
 
   const docs = snapshot.docs.reverse()
-  const history: any[] = []
+  const history: { role: string; parts: any[] }[] = []
 
   for (const doc of docs) {
     const data = doc.data()
@@ -92,8 +93,8 @@ async function getChatHistory(chatId: number, limit = 20) {
     if (parts.length === 0) continue
 
     let role = data.role
-    const hasFunctionResponse = parts.some((p: any) => p.functionResponse)
-    const hasFunctionCall = parts.some((p: any) => p.functionCall)
+    const hasFunctionResponse = parts.some((p: { functionResponse?: unknown }) => p.functionResponse)
+    const hasFunctionCall = parts.some((p: { functionCall?: unknown }) => p.functionCall)
 
     if (hasFunctionResponse) {
       role = 'user'
@@ -104,7 +105,7 @@ async function getChatHistory(chatId: number, limit = 20) {
     }
 
     // Ensure we don't send unsupported MIME types in history
-    const sanitizedParts = parts.map((p: any) => {
+    const sanitizedParts = parts.map((p: { inlineData?: { mimeType: string } }) => {
       if (p.inlineData && p.inlineData.mimeType === 'application/octet-stream') {
         return { ...p, inlineData: { ...p.inlineData, mimeType: 'image/jpeg' } }
       }
@@ -135,10 +136,12 @@ async function getChatHistory(chatId: number, limit = 20) {
 /**
  * Summarizes the chat history and stores it in Firestore to maintain context efficiently.
  *
- * @param chatId - The unique identifier for the chat.
+ * @param _chatId - The unique identifier for the chat.
  */
-async function summarizeHistory(chatId: number) {
-  const history = await getChatHistory(chatId, 50)
+// @ts-expect-error: summarizeHistory is not yet used
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+async function summarizeHistory(_chatId: number) {
+  const history = await getChatHistory(_chatId, 50)
   if (history.length < 30) return
 
   logInstruction(chatId, 'INFO', 'Summarizing chat history...')
@@ -167,6 +170,8 @@ ${JSON.stringify(history)}`
  *
  * @returns A promise that resolves to a formatted string of project rules.
  */
+// @ts-expect-error: getProjectRules is not yet used
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 async function getProjectRules() {
   const snapshot = await db.collection('project_rules').orderBy('createdAt', 'desc').get()
   if (snapshot.empty) return ''
@@ -215,7 +220,7 @@ export async function processOneMessage(
     while (geminiHistory.length > 0) {
       const last = geminiHistory[geminiHistory.length - 1]
       if (last.role === 'model') {
-        const hasCalls = last.parts.some((p: any) => p.functionCall)
+        const hasCalls = last.parts.some((p: { functionCall?: unknown }) => p.functionCall)
         if (hasCalls) {
           geminiHistory.pop()
           continue
@@ -229,7 +234,9 @@ export async function processOneMessage(
     }
   }
 
-  const userParts: any[] = [{ text: userMessage || (media ? 'Explain this media.' : '') }]
+  const userParts: { text?: string; inlineData?: { data: string; mimeType: string } }[] = [
+    { text: userMessage || (media ? 'Explain this media.' : '') },
+  ]
   if (media) {
     userParts.push({
       inlineData: {
@@ -302,7 +309,7 @@ Ready to assist.`
     ...geminiHistory,
   ].map((turn) => ({
     ...turn,
-    parts: turn.parts.map((p: any) => {
+    parts: turn.parts.map((p: { inlineData?: { mimeType: string } }) => {
       if (p.inlineData && p.inlineData.mimeType === 'application/octet-stream') {
         return { ...p, inlineData: { ...p.inlineData, mimeType: 'image/jpeg' } }
       }
@@ -322,7 +329,7 @@ Ready to assist.`
       await safeSendMessage(chatId, turnIndicator)
 
       let fullText = ''
-      let telegramMessage: any = null
+      let telegramMessage: { message_id: number } | null = null
       let lastSentLength = 0
       let updateTimer: NodeJS.Timeout | null = null
 
@@ -341,8 +348,9 @@ Ready to assist.`
             )
           }
           lastSentLength = fullText.length
-        } catch (e: any) {
-          if (!e.description?.includes('message is not modified')) {
+        } catch (e: unknown) {
+          const err = e as { description?: string }
+          if (!err.description?.includes('message is not modified')) {
             try {
               await bot.telegram.editMessageText(
                 chatId,
@@ -365,7 +373,8 @@ Ready to assist.`
           const chunkParts = chunk.candidates?.[0]?.content?.parts
           if (chunkParts) {
             for (const part of chunkParts) {
-              const sig = (part as any).thought_signature || (part as any).thoughtSignature
+              const p = part as { thought_signature?: string; thoughtSignature?: string }
+              const sig = p.thought_signature || p.thoughtSignature
               signatures.push(sig)
             }
           }
@@ -393,7 +402,10 @@ Ready to assist.`
 
       if (modelTurnParts.length > 0) {
         for (let i = 0; i < modelTurnParts.length; i++) {
-          const part = modelTurnParts[i] as any
+          const part = modelTurnParts[i] as {
+            thought_signature?: string
+            functionCall?: unknown
+          }
           if (signatures[i]) {
             part.thought_signature = signatures[i]
           }
@@ -422,7 +434,7 @@ Ready to assist.`
       const functionResponses = []
       for (const call of functionCalls) {
         const { name } = call
-        const args = call.args as any
+        const args = call.args as Record<string, any>
         const normalizedName = name.replace(/^default_api:/, '')
 
         let actionMsg = `🛠️ *Executing:* \`${normalizedName}\``
@@ -509,9 +521,10 @@ Ready to assist.`
             await safeSendMessage(chatId, finalMsg)
           }
         }
-      } catch (e: any) {
-        logInstruction(chatId, 'ERROR', `Git operation failed: ${e.message}`)
-        await safeSendMessage(chatId, `⚠️ *Git Push Failed:* ${e.message}`)
+      } catch (e: unknown) {
+        const err = e as Error
+        logInstruction(chatId, 'ERROR', `Git operation failed: ${err.message}`)
+        await safeSendMessage(chatId, `⚠️ *Git Push Failed:* ${err.message}`)
       }
     }
 
@@ -522,18 +535,18 @@ Ready to assist.`
         .delete()
         .catch(() => {})
     }
-  } catch (error: any) {
-    const errorString = error.stack || error.message || String(error)
+  } catch (error: unknown) {
+    const errorString = error instanceof Error ? error.stack || error.message : String(error)
     logInstruction(chatId, 'ERROR', `Error: ${errorString}`)
 
     const isOverloaded =
       error instanceof GoogleGenerativeAIError ||
-      error.status === 503 ||
-      error.status === 504 ||
-      error.status === 429 ||
-      error.code === 503 ||
-      error.code === 504 ||
-      error.code === 429 ||
+      (error as any).status === 503 ||
+      (error as any).status === 504 ||
+      (error as any).status === 429 ||
+      (error as any).code === 503 ||
+      (error as any).code === 504 ||
+      (error as any).code === 429 ||
       errorString.includes('503') ||
       errorString.includes('504') ||
       errorString.includes('429') ||

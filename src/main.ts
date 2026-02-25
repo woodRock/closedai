@@ -28,8 +28,8 @@ for (const env of REQUIRED_ENV) {
   }
 }
 
-bot.catch((err: any) => {
-  const msg = err.message || String(err)
+bot.catch((err: unknown) => {
+  const msg = err instanceof Error ? err.message : String(err)
   if (msg.includes('409: Conflict')) {
     logInstruction(0, 'INFO', 'Conflict: Another bot instance started. Gracefully exiting...')
     process.exit(0)
@@ -170,7 +170,15 @@ async function run() {
     }, 60000)
 
     bot.on('message', async (ctx) => {
-      const msg = ctx.message as any
+      const msg = ctx.message as {
+        text?: string
+        caption?: string
+        photo?: { file_id: string }[]
+        voice?: { file_id: string }
+        audio?: { file_id: string }
+        video?: { file_id: string }
+        document?: { file_id: string; mime_type: string }
+      }
       const text = msg.text || msg.caption || ''
       let media = undefined
 
@@ -223,8 +231,9 @@ async function run() {
     try {
       logInstruction(0, 'INFO', 'Starting bot in polling mode...')
       await bot.launch()
-    } catch (err: any) {
-      if (err.message?.includes('409: Conflict')) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err)
+      if (msg.includes('409: Conflict')) {
         logInstruction(0, 'INFO', 'Conflict: Another bot instance is already polling. Skipping...')
         cleanup()
         process.exit(0)
@@ -255,7 +264,16 @@ async function run() {
     const updates = await bot.telegram.getUpdates(0, 100, lastUpdateId + 1, ['message'])
     for (const update of updates) {
       if ('message' in update) {
-        const message = update.message as any
+        const message = update.message as {
+          text?: string
+          caption?: string
+          photo?: { file_id: string }[]
+          voice?: { file_id: string }
+          audio?: { file_id: string }
+          video?: { file_id: string }
+          document?: { file_id: string; mime_type: string }
+          chat: { id: number }
+        }
         const text = message.text || message.caption || ''
         let media = undefined
 
@@ -333,8 +351,9 @@ async function run() {
 
     // Final heartbeat update
     await botStatusRef.set({ last_seen: new Date() }, { merge: true })
-  } catch (err: any) {
-    if (err.message?.includes('409: Conflict')) {
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    if (msg.includes('409: Conflict')) {
       logInstruction(0, 'INFO', 'Conflict detected during update fetch. Skipping...')
     } else {
       console.error(err)

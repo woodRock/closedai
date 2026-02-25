@@ -20,7 +20,7 @@ export async function handleSystemCommands(
   userMessage: string,
   chatId: number,
   repoRoot: string,
-  safeSendMessage: (chatId: number, text: string) => Promise<any>,
+  safeSendMessage: (chatId: number, text: string) => Promise<unknown>,
 ): Promise<boolean> {
   const parts = userMessage.trim().split(/\s+/)
   const cmd = parts[0]!.toLowerCase()
@@ -52,7 +52,11 @@ export async function handleSystemCommands(
       } else if (data.parts && Array.isArray(data.parts)) {
         text = data.parts
           .map(
-            (p: any) =>
+            (p: {
+              text?: string
+              functionCall?: { name: string }
+              functionResponse?: { name: string }
+            }) =>
               p.text ||
               (p.functionCall
                 ? `[Tool: ${p.functionCall.name}]`
@@ -77,8 +81,9 @@ export async function handleSystemCommands(
         cwd: repoRoot,
       }).toString()
       await safeSendMessage(chatId, `🌳 *Recent Commits:*\n\n\`\`\`\n${gitLog}\n\`\`\``)
-    } catch (e: any) {
-      await safeSendMessage(chatId, '❌ Failed to fetch git log: ' + e.message)
+    } catch (e: unknown) {
+      const err = e as Error
+      await safeSendMessage(chatId, '❌ Failed to fetch git log: ' + err.message)
     }
     return true
   }
@@ -98,8 +103,9 @@ export async function handleSystemCommands(
           `*Full Diff (truncated):*\n\`\`\`diff\n${diff.substring(0, 2000)}${diff.length > 2000 ? '\n...' : ''}\n\`\`\``
         await safeSendMessage(chatId, response)
       }
-    } catch (e: any) {
-      await safeSendMessage(chatId, '❌ Failed to fetch diff: ' + e.message)
+    } catch (e: unknown) {
+      const err = e as Error
+      await safeSendMessage(chatId, '❌ Failed to fetch diff: ' + err.message)
     }
     return true
   }
@@ -115,8 +121,9 @@ export async function handleSystemCommands(
         chatId,
         `🎋 *Git Info*\n\n*Branch:* ${branch}\n*Status:*\n\`\`\`\n${status}\n\`\`\``,
       )
-    } catch (e: any) {
-      await safeSendMessage(chatId, '❌ Failed to fetch git info: ' + e.message)
+    } catch (e: unknown) {
+      const err = e as Error
+      await safeSendMessage(chatId, '❌ Failed to fetch git info: ' + err.message)
     }
     return true
   }
@@ -250,8 +257,9 @@ ${output}`
       } else {
         await safeSendMessage(chatId, formatted)
       }
-    } catch (e: any) {
-      const errorOutput = e.stdout?.toString() || e.message
+    } catch (e: unknown) {
+      const err = e as { stdout?: Buffer; message: string }
+      const errorOutput = err.stdout?.toString() || err.message
       await safeSendMessage(
         chatId,
         `❌ *Tests Failed or Error occurred:*\n\n\`\`\`\n${errorOutput.substring(0, 3000)}\n\`\`\``,

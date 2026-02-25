@@ -15,8 +15,9 @@ export const bot = new Telegraf(process.env.TELEGRAM_BOT_TOKEN!.trim(), {
   telegram: { agent: new https.Agent({ family: 4 }) },
 })
 
-bot.catch((err: any) => {
-  logInstruction(0, 'ERROR', `Telegraf error: ${err.message}`)
+bot.catch((err: unknown) => {
+  const errorMessage = err instanceof Error ? err.message : String(err)
+  logInstruction(0, 'ERROR', `Telegraf error: ${errorMessage}`)
 })
 
 const MAX_MESSAGE_LENGTH = 4000
@@ -39,8 +40,8 @@ export async function safeSendMessage(chatId: number, text: string) {
   } catch {
     try {
       return await bot.telegram.sendMessage(chatId, text)
-    } catch (e2) {
-      logInstruction(chatId, 'ERROR', `Failed to send message: ${e2}`)
+    } catch {
+      logInstruction(chatId, 'ERROR', 'Failed to send message')
     }
   }
 }

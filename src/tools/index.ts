@@ -725,7 +725,9 @@ export async function executeTool(
               const fileContent = fs.readFileSync(fullPath, 'utf-8')
               const outline = await getFileOutline(file, fileContent)
               isDefinition = outline.some((s) => s.name === name && s.start.row + 1 === lineNum)
-            } catch (e) {}
+            } catch (e) {
+              // Ignore errors during outline extraction for filtering
+            }
 
             if (!isDefinition) {
               results.push({ file, line: lineNum, context })
@@ -925,6 +927,7 @@ export async function executeTool(
         } catch (e: any) {
           throw new Error(
             `Push aborted: Pre-flight tests failed.\n${e.stdout?.toString() || e.message}`,
+            { cause: e },
           )
         }
       }

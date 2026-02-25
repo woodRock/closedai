@@ -27,7 +27,7 @@ async function main() {
   try {
     execSync('gh auth status', { stdio: 'ignore' })
     console.log(pc.green('✅ GitHub CLI: authenticated.'))
-  } catch (e) {
+  } catch {
     console.log(pc.red('❌ GitHub CLI: not authenticated.'))
     console.log(pc.yellow("Please run 'gh auth login' first to enable automatic secret setup.\n"))
     process.exit(1)
@@ -51,9 +51,10 @@ async function main() {
     progressBar.update(100)
     progressBar.stop()
     console.log(pc.green('✅ Gemini API Key: validated.\n'))
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as Error
     progressBar.stop()
-    console.error(pc.red('❌ Gemini API Key: invalid: ' + e.message))
+    console.error(pc.red('❌ Gemini API Key: invalid: ' + err.message))
     process.exit(1)
   }
 
@@ -76,9 +77,10 @@ async function main() {
     telegramProgress.update(100)
     telegramProgress.stop()
     console.log(pc.green(`✅ Telegram Bot Token: validated (Bot: @${botUsername}).\n`))
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as Error
     telegramProgress.stop()
-    console.error(pc.red('❌ Telegram Validation Failed: ' + e.message))
+    console.error(pc.red('❌ Telegram Validation Failed: ' + err.message))
     process.exit(1)
   }
 
@@ -117,9 +119,10 @@ async function main() {
     firebaseProgress.update(100)
     firebaseProgress.stop()
     console.log(pc.green('✅ Firebase: validated.\n'))
-  } catch (e: any) {
+  } catch (e: unknown) {
+    const err = e as Error
     firebaseProgress.stop()
-    console.error(pc.red('❌ Firebase Service Account: invalid: ' + e.message))
+    console.error(pc.red('❌ Firebase Service Account: invalid: ' + err.message))
     process.exit(1)
   }
 
@@ -137,8 +140,9 @@ async function main() {
 
     fs.unlinkSync(tempSaPath)
     console.log(pc.green('✅ Firestore Indexes: deployed.\n'))
-  } catch (e: any) {
-    console.error(pc.red('❌ Failed to deploy indexes: ' + e.message))
+  } catch (e: unknown) {
+    const err = e as Error
+    console.error(pc.red('❌ Failed to deploy indexes: ' + err.message))
     console.log(
       pc.yellow(
         'This is normal if the project was just created. They will be deployed on the first GitHub Action run.',

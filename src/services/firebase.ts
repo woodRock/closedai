@@ -22,12 +22,13 @@ if (serviceAccountString && serviceAccountString !== '{}') {
       throw new Error('Service account object is missing "project_id".')
     }
     app = initializeApp({ credential: cert(serviceAccount) })
-  } catch (e: any) {
-    console.error(pc.red(`❌ FIREBASE_SERVICE_ACCOUNT error: ${e.message}`))
+  } catch (e: unknown) {
+    const err = e as Error
+    console.error(pc.red(`❌ FIREBASE_SERVICE_ACCOUNT error: ${err.message}`))
     console.log(pc.yellow('Attempting to initialize with Application Default Credentials...'))
     try {
       app = initializeApp()
-    } catch (e2) {
+    } catch {
       console.error(pc.red('❌ Failed to initialize Firebase: No valid credentials found.'))
       process.exit(1)
     }
@@ -35,7 +36,7 @@ if (serviceAccountString && serviceAccountString !== '{}') {
 } else {
   try {
     app = initializeApp()
-  } catch (e) {
+  } catch {
     console.error(pc.red('❌ FIREBASE_SERVICE_ACCOUNT is missing and ADC failed.'))
     process.exit(1)
   }
