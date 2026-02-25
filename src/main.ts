@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Entry point for the bot application. Handles initialization,
+ * environment validation, locking, and execution modes (polling vs batch).
+ */
+
 import pc from 'picocolors'
 import path from 'path'
 import { fileURLToPath } from 'url'
@@ -32,6 +37,12 @@ bot.catch((err: any) => {
   logInstruction(0, 'ERROR', `Telegraf error: ${msg}`)
 })
 
+/**
+ * Downloads media from Telegram based on its file ID and attempts to determine its MIME type.
+ *
+ * @param fileId - The Telegram file ID of the media.
+ * @returns A promise that resolves to an object containing base64 data and MIME type, or undefined if download fails.
+ */
 async function downloadMedia(fileId: string) {
   try {
     const link = await bot.telegram.getFileLink(fileId)
@@ -68,6 +79,9 @@ async function downloadMedia(fileId: string) {
   }
 }
 
+/**
+ * The main execution loop of the bot.
+ */
 async function run() {
   const isPolling = process.argv.includes('--poll')
   // Use WORKSPACE_DIR if provided (e.g., in GitHub Actions), otherwise use current directory
@@ -78,7 +92,9 @@ async function run() {
   // Ensure git treats the workspace as safe (required for GitHub Actions)
   try {
     execSync(`git config --global --add safe.directory "${repoRoot}"`)
-  } catch (e) {}
+  } catch {
+    // Ignore git config errors
+  }
 
   // 1. Local Lock File Check
   // Always put the lock file in the actual process CWD to avoid conflicts across different workspace runs if sharing a runner
@@ -89,11 +105,13 @@ async function run() {
       process.kill(pid, 0) // Check if process exists
       logInstruction(0, 'INFO', `Bot is already running locally (PID: ${pid}). Skipping...`)
       return
-    } catch (e) {
+    } catch {
       // Stale lock file
       try {
         fs.unlinkSync(lockFile)
-      } catch (ignore) {}
+      } catch {
+        // Ignore unlink error
+      }
     }
   }
   fs.writeFileSync(lockFile, process.pid.toString())
@@ -101,7 +119,9 @@ async function run() {
   const cleanup = () => {
     try {
       if (fs.existsSync(lockFile)) fs.unlinkSync(lockFile)
-    } catch (ignore) {}
+    } catch {
+      // Ignore cleanup error
+    }
   }
   process.on('exit', cleanup)
   process.on('SIGINT', () => {

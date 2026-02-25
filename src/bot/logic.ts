@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Core logic for processing Telegram messages and interacting with Gemini.
+ */
+
 import { execSync } from 'child_process'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -7,11 +11,17 @@ import { bot } from './instance.js'
 import { logInstruction } from '../utils/logger.js'
 import { handleSystemCommands } from './commands.js'
 import { executeTool } from '../tools/index.js'
-import { getConfig } from '../utils/config.js'
 import { GoogleGenerativeAIError } from '@google/generative-ai'
 
 const MAX_MESSAGE_LENGTH = 4000
 
+/**
+ * Sends a message to a Telegram chat safely, handling long messages and Markdown parsing errors.
+ *
+ * @param chatId - The unique identifier for the target chat.
+ * @param text - The text of the message to be sent.
+ * @returns A promise that resolves to the sent message object.
+ */
 export async function safeSendMessage(chatId: number, text: string) {
   if (!text) return
   try {
@@ -20,7 +30,7 @@ export async function safeSendMessage(chatId: number, text: string) {
     }
     const truncated = text.substring(0, MAX_MESSAGE_LENGTH) + '\n\n... (message truncated)'
     return await bot.telegram.sendMessage(chatId, truncated, { parse_mode: 'Markdown' })
-  } catch (e) {
+  } catch {
     try {
       return await bot.telegram.sendMessage(chatId, text)
     } catch (e2) {
@@ -29,6 +39,13 @@ export async function safeSendMessage(chatId: number, text: string) {
   }
 }
 
+/**
+ * Generates a concise git commit message based on the provided diff.
+ *
+ * @param diff - The git diff string.
+ * @param chatId - The chat ID for error logging.
+ * @returns A promise that resolves to the generated commit message.
+ */
 async function generateCommitMessage(diff: string, chatId: number): Promise<string> {
   if (!diff || diff.trim().length === 0) {
     return 'ClosedAI: Minor updates'
@@ -51,6 +68,13 @@ ${diff.substring(0, 15000)}`
   }
 }
 
+/**
+ * Retrieves the conversation history for a specific chat from Firestore.
+ *
+ * @param chatId - The unique identifier for the chat.
+ * @param limit - The maximum number of history records to retrieve.
+ * @returns A promise that resolves to an array of history parts.
+ */
 async function getChatHistory(chatId: number, limit = 20) {
   const snapshot = await db
     .collection('history')
@@ -108,6 +132,11 @@ async function getChatHistory(chatId: number, limit = 20) {
   return history
 }
 
+/**
+ * Summarizes the chat history and stores it in Firestore to maintain context efficiently.
+ *
+ * @param chatId - The unique identifier for the chat.
+ */
 async function summarizeHistory(chatId: number) {
   const history = await getChatHistory(chatId, 50)
   if (history.length < 30) return
@@ -133,6 +162,11 @@ ${JSON.stringify(history)}`
   // For now, let's just keep it but the summary will be at the start of context.
 }
 
+/**
+ * Retrieves project-specific rules from Firestore.
+ *
+ * @returns A promise that resolves to a formatted string of project rules.
+ */
 async function getProjectRules() {
   const snapshot = await db.collection('project_rules').orderBy('createdAt', 'desc').get()
   if (snapshot.empty) return ''
@@ -142,6 +176,16 @@ async function getProjectRules() {
   return `\nPROJECT RULES:\n${rules}\n`
 }
 
+/**
+ * Processes a single message from a user, interacting with Gemini and executing tools as needed.
+ *
+ * @param userMessage - The text message from the user.
+ * @param chatId - The unique identifier for the chat.
+ * @param repoRoot - The root directory of the repository.
+ * @param messageId - Optional ID for queued messages.
+ * @param media - Optional media data (base64) and MIME type.
+ * @param isPolling - Whether the bot is running in polling mode.
+ */
 export async function processOneMessage(
   userMessage: string,
   chatId: number,
@@ -168,9 +212,8 @@ export async function processOneMessage(
   }
 
   if (geminiHistory.length > 0) {
-    let last = geminiHistory[geminiHistory.length - 1]
     while (geminiHistory.length > 0) {
-      last = geminiHistory[geminiHistory.length - 1]
+      const last = geminiHistory[geminiHistory.length - 1]
       if (last.role === 'model') {
         const hasCalls = last.parts.some((p: any) => p.functionCall)
         if (hasCalls) {
@@ -283,7 +326,7 @@ Ready to assist.`
       let lastSentLength = 0
       let updateTimer: NodeJS.Timeout | null = null
 
-      const updateTelegram = async (final = false) => {
+      const updateTelegram = async (_final = false) => {
         if (!fullText.trim() || fullText.length === lastSentLength) return
         try {
           if (!telegramMessage) {
@@ -307,7 +350,9 @@ Ready to assist.`
                 undefined,
                 fullText,
               )
-            } catch {}
+            } catch {
+              // Ignore edit error
+            }
           }
         }
       }
@@ -335,7 +380,9 @@ Ready to assist.`
               }, 1000)
             }
           }
-        } catch {}
+        } catch {
+          // Ignore stream errors
+        }
       }
 
       if (updateTimer) clearTimeout(updateTimer)
@@ -529,6 +576,12 @@ Ready to assist.`
   }
 }
 
+/**
+ * Checks the Firestore queue for pending messages and processes them.
+ *
+ * @param repoRoot - The root directory of the repository.
+ * @param isPolling - Whether the bot is running in polling mode.
+ */
 export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
   const snapshot = await db
     .collection('queue')
@@ -554,7 +607,7 @@ export async function checkQueue(repoRoot: string, isPolling: boolean = false) {
       data.media || data.image,
       isPolling,
     )
-  } catch (err) {
+  } catch {
     await doc.ref.update({ status: 'pending' }).catch(() => {})
   }
 }

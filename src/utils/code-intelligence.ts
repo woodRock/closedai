@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Code intelligence utilities using Tree-sitter for parsing and analyzing source code.
+ */
+
 import { Parser, Language, Query } from 'web-tree-sitter'
 import * as path from 'path'
 import * as fs from 'fs'
@@ -6,6 +10,9 @@ let isInitialized = false
 let parser: Parser | null = null
 const langCache: Record<string, Language> = {}
 
+/**
+ * Initializes the Tree-sitter parser.
+ */
 async function initialize() {
   if (isInitialized) return
   await Parser.init()
@@ -76,6 +83,13 @@ const LANG_QUERY_MAP: Record<string, string> = {
   `,
 }
 
+/**
+ * Loads a Tree-sitter language based on the file extension.
+ *
+ * @param extension - The file extension (e.g., '.ts').
+ * @returns A promise that resolves to the loaded Language or null if unsupported.
+ * @throws {Error} If the WASM file for the language is missing.
+ */
 async function getLanguage(extension: string) {
   const wasmFile = LANG_WASM_MAP[extension]
   if (!wasmFile) return null
@@ -102,6 +116,14 @@ export interface SymbolInfo {
   children?: SymbolInfo[]
 }
 
+/**
+ * Generates an outline of symbols (classes, functions, methods) from a code file.
+ *
+ * @param filePath - The path of the file to analyze.
+ * @param content - The source code content.
+ * @returns A promise that resolves to an array of SymbolInfo objects.
+ * @throws {Error} If the language is unsupported or parsing fails.
+ */
 export async function getFileOutline(filePath: string, content: string): Promise<SymbolInfo[]> {
   await initialize()
   const ext = path.extname(filePath)
@@ -178,6 +200,12 @@ export async function getFileOutline(filePath: string, content: string): Promise
   }
 }
 
+/**
+ * Fallback method to generate a basic outline by traversing the syntax tree.
+ *
+ * @param rootNode - The root node of the syntax tree.
+ * @returns An array of SymbolInfo objects.
+ */
 function getLegacyOutline(rootNode: any): SymbolInfo[] {
   const symbols: SymbolInfo[] = []
 

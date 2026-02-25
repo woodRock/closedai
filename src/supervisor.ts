@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Supervisor script to keep the bot running in polling mode.
+ * Automatically restarts the bot if it crashes or exits.
+ */
+
 import { spawn } from 'child_process'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -5,6 +10,9 @@ import { dirname, join } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
+/**
+ * Spawns the main bot process and sets up restart logic on exit or error.
+ */
 function launch() {
   console.log('🚀 [Supervisor] Starting bot process...')
 

@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Gemini AI service initialization and configuration.
+ */
+
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import { toolDefinitions } from '../tools/index.js'
 import { getConfig } from '../utils/config.js'
@@ -5,6 +9,9 @@ import { getConfig } from '../utils/config.js'
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY ?? '')
 const config = getConfig()
 
+/**
+ * The primary Gemini generative model instance configured with tools.
+ */
 export const model = genAI.getGenerativeModel(
   {
     model: config.model.name,
@@ -16,6 +23,9 @@ export const model = genAI.getGenerativeModel(
   { timeout: config.timeout },
 )
 
+/**
+ * The Gemini embedding model instance.
+ */
 export const embeddingModel = genAI.getGenerativeModel({ model: 'gemini-embedding-001' })
 
 export { genAI }

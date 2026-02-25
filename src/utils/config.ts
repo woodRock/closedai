@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Configuration loader for the application, reading from config.yaml.
+ */
+
 import * as yaml from 'js-yaml'
 import * as fs from 'fs'
 import * as path from 'path'
@@ -22,6 +26,13 @@ interface Config {
 
 let config: Config | null = null
 
+/**
+ * Loads and returns the application configuration from the config.yaml file.
+ * Caches the configuration after the first load.
+ *
+ * @returns The application configuration object.
+ * @throws {Error} If the configuration file cannot be read or parsed.
+ */
 export function getConfig(): Config {
   if (config) {
     return config

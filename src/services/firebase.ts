@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Firebase Admin SDK initialization and Firestore service export.
+ */
+
 import { initializeApp, cert } from 'firebase-admin/app'
 import { getFirestore, FieldValue } from 'firebase-admin/firestore'
 import pc from 'picocolors'
@@ -37,6 +41,9 @@ if (serviceAccountString && serviceAccountString !== '{}') {
   }
 }
 
+/**
+ * The initialized Firestore database instance.
+ */
 export const db = getFirestore(app)
 db.settings({ ignoreUndefinedProperties: true })
 export { FieldValue }

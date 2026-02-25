@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Definitions and execution logic for tools available to the Gemini model.
+ */
+
 import { SchemaType } from '@google/generative-ai'
 import type { Tool } from '@google/generative-ai'
 import * as fs from 'fs'
@@ -11,6 +15,9 @@ import { getFileOutline } from '../utils/code-intelligence.js'
 import { db } from '../services/firebase.js'
 import { indexFile, semanticSearch } from '../utils/rag.js'
 
+/**
+ * Definitions of available tools for the Gemini model, following the Google Generative AI schema.
+ */
 export const toolDefinitions: Tool[] = [
   {
     functionDeclarations: [
@@ -499,6 +506,14 @@ const FORBIDDEN_FILES = [
   'service-account.json',
 ]
 
+/**
+ * Resolves and validates a relative path against the repository root.
+ *
+ * @param repoRoot - The root directory of the repository.
+ * @param relativePath - The relative path to sanitize.
+ * @returns The resolved absolute path.
+ * @throws {Error} If the path is outside the root or points to a forbidden file.
+ */
 function sanitizePath(repoRoot: string, relativePath: string): string {
   const fullPath = path.resolve(repoRoot, relativePath)
   const resolvedRepoRoot = path.resolve(repoRoot)
@@ -521,6 +536,12 @@ function sanitizePath(repoRoot: string, relativePath: string): string {
   return fullPath
 }
 
+/**
+ * Checks if a shell command contains potentially dangerous patterns.
+ *
+ * @param command - The shell command to validate.
+ * @returns True if the command is considered safe, false otherwise.
+ */
 function isShellCommandSafe(command: string): boolean {
   if (process.env.UNSAFE_MODE === 'true') return true
 
@@ -547,6 +568,13 @@ function isShellCommandSafe(command: string): boolean {
   return true
 }
 
+/**
+ * Formats code content with line numbers and basic syntax highlighting for terminal output.
+ *
+ * @param content - The code content to format.
+ * @param filePath - The path of the file (used for extension-based highlighting).
+ * @returns The formatted string.
+ */
 function formatCodeForTerminal(content: string, filePath: string): string {
   const lines = content.split('\n')
   const ext = path.extname(filePath)
@@ -577,6 +605,15 @@ function formatCodeForTerminal(content: string, filePath: string): string {
     .join('\n')
 }
 
+/**
+ * Generates a unified diff string representing changes between search and replace blocks.
+ *
+ * @param path - The file path being patched.
+ * @param search - The original text block.
+ * @param replace - The new text block.
+ * @param useColor - Whether to include ANSI color codes in the output.
+ * @returns A formatted diff string.
+ */
 function generateDiff(path: string, search: string, replace: string, useColor = false): string {
   const red = useColor ? (s: string) => pc.red(s) : (s: string) => s
   const green = useColor ? (s: string) => pc.green(s) : (s: string) => s
@@ -597,6 +634,16 @@ function generateDiff(path: string, search: string, replace: string, useColor = 
   return diff
 }
 
+/**
+ * Executes a tool by name with the provided arguments.
+ *
+ * @param name - The name of the tool to execute.
+ * @param args - The arguments for the tool.
+ * @param repoRoot - The root directory of the repository.
+ * @param chatId - The chat ID for logging purposes.
+ * @param safeSendMessage - Utility function to send messages back to the user.
+ * @returns A promise that resolves to the result or error of the tool execution.
+ */
 export async function executeTool(
   name: string,
   args: any,

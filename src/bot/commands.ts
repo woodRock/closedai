@@ -1,8 +1,21 @@
+/**
+ * @fileoverview Command handlers for the Telegram bot.
+ */
+
 import { execSync } from 'child_process'
 import { db } from '../services/firebase.js'
 import { logInstruction } from '../utils/logger.js'
 import { model } from '../services/gemini.js'
 
+/**
+ * Processes system commands (starting with '/') and sends appropriate responses.
+ *
+ * @param userMessage - The message text from the user.
+ * @param chatId - The unique identifier for the chat.
+ * @param repoRoot - The root directory of the repository.
+ * @param safeSendMessage - Utility function to send messages safely.
+ * @returns A promise that resolves to true if the command was handled, false otherwise.
+ */
 export async function handleSystemCommands(
   userMessage: string,
   chatId: number,
@@ -118,14 +131,18 @@ export async function handleSystemCommands(
     let gitHash = 'unknown'
     try {
       gitHash = execSync('git rev-parse --short HEAD', { cwd: repoRoot }).toString().trim()
-    } catch {}
+    } catch {
+      // Ignore errors
+    }
 
     let diskUsage = 'unknown'
     try {
       diskUsage = execSync("df -h . | tail -1 | awk '{print $5}'", { cwd: repoRoot })
         .toString()
         .trim()
-    } catch {}
+    } catch {
+      // Ignore errors
+    }
 
     const response =
       `✅ *System Status*\n\n` +

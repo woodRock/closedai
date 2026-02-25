@@ -1,5 +1,12 @@
+/**
+ * @fileoverview Logging utilities for terminal output and instruction tracking.
+ */
+
 import pc from 'picocolors'
 
+/**
+ * Prints the application header to the console.
+ */
 export function printHeader() {
   console.log(pc.bold(pc.magenta('====================================================')))
   console.log(pc.bold(pc.magenta('         🤖 CLOSED-AI BOT ENGINE v1.1              ')))
@@ -11,6 +18,13 @@ export function printHeader() {
   console.log(pc.gray('----------------------------------------------------\n'))
 }
 
+/**
+ * Logs a specific instruction or action to the console with formatting.
+ *
+ * @param chatId - The chat ID associated with the action.
+ * @param type - The category of the instruction (e.g., 'WRITE', 'SHELL', 'ERROR').
+ * @param details - A description or detail of the action.
+ */
 export function logInstruction(chatId: number, type: string, details: string) {
   const timestamp = new Date().toLocaleTimeString()
   const colorMap: any = {

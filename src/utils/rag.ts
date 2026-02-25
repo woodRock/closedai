@@ -1,3 +1,7 @@
+/**
+ * @fileoverview Retrieval-Augmented Generation (RAG) utilities for indexing and searching the codebase.
+ */
+
 import { embeddingModel } from '../services/gemini.js'
 import { db, FieldValue } from '../services/firebase.js'
 import * as fs from 'fs'
@@ -10,6 +14,15 @@ export interface CodeChunk {
   endLine: number
 }
 
+/**
+ * Splits a file's content into overlapping chunks for indexing.
+ *
+ * @param filePath - The path of the file.
+ * @param content - The source code content.
+ * @param chunkSize - The number of lines per chunk.
+ * @param overlap - The number of overlapping lines between chunks.
+ * @returns An array of CodeChunk objects.
+ */
 export function chunkFile(
   filePath: string,
   content: string,
@@ -38,6 +51,13 @@ export function chunkFile(
   return chunks
 }
 
+/**
+ * Generates a vector embedding for the given text using the Gemini embedding model.
+ * Note: The embedding is truncated to 768 dimensions for compatibility.
+ *
+ * @param text - The text to embed.
+ * @returns A promise that resolves to an array of numbers representing the embedding.
+ */
 export async function getEmbedding(text: string): Promise<number[]> {
   const result = await embeddingModel.embedContent(text)
   // Truncate to 768 dimensions as gemini-embedding-001 returns 3072
@@ -45,6 +65,12 @@ export async function getEmbedding(text: string): Promise<number[]> {
   return result.embedding.values.slice(0, 768)
 }
 
+/**
+ * Indexes a file by chunking it, generating embeddings, and storing them in Firestore.
+ *
+ * @param repoRoot - The root directory of the repository.
+ * @param relativePath - The relative path of the file to index.
+ */
 export async function indexFile(repoRoot: string, relativePath: string) {
   console.log(`>>> Starting indexFile for ${relativePath}`)
   const fullPath = path.join(repoRoot, relativePath)
@@ -80,6 +106,13 @@ export async function indexFile(repoRoot: string, relativePath: string) {
   await batch.commit()
 }
 
+/**
+ * Performs a semantic search across the indexed codebase using vector similarity.
+ *
+ * @param query - The natural language query.
+ * @param limit - The maximum number of results to return.
+ * @returns A promise that resolves to an array of matching document data.
+ */
 export async function semanticSearch(query: string, limit = 5) {
   const queryEmbedding = await getEmbedding(query)
   const collection = db.collection('code_embeddings')
