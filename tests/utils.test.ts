@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { truncateString, parseJsonSafe } from '../utils';
+import { truncateString, parseJsonSafe } from '../src/utils/helpers';
 
 describe('utils', () => {
   describe('truncateString', () => {
