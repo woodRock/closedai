@@ -51,8 +51,8 @@ async function generateCommitMessage(diff: string, chatId: number): Promise<stri
     return 'ClosedAI: Minor updates'
   }
   try {
-    // User requested gemini-3-flash-preview specifically for commit messages
-    const messageModel = genAI.getGenerativeModel({ model: 'gemini-3-flash-preview' })
+    // User requested gemini-3.1-pro-preview specifically for commit messages
+    const messageModel = genAI.getGenerativeModel({ model: 'gemini-3.1-pro-preview' })
     const prompt = `Generate a concise, one-line meaningful git commit message for the following changes. 
 Do not use markdown formatting. Return ONLY the commit message text.
 
